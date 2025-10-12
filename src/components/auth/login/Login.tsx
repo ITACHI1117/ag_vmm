@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+"use client";
+import React, { useEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -12,29 +13,77 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, EyeOff, Car, Shield } from "lucide-react";
+import { Form, FormProvider, useForm } from "react-hook-form";
+import z from "zod";
+import { loginSchema } from "@/schema/auth";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import useProgressBarNavigation from "@/hooks/useProgressBarNavigator";
+import { useLogin } from "@/queries/auth.queries";
+import { toast } from "sonner";
+import { Spinner } from "@/components/ui/spinner";
+import { useAuthStore } from "@/store/authStore";
+import { createClient, supabase } from "@/supabse-client";
 
 // Login Page Component
-const LoginPage = ({
-  onSwitchToRegister,
-}: {
-  onSwitchToRegister: () => void;
-}) => {
+export const LoginComponent = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const { push } = useProgressBarNavigation();
+  const LoginQuery = useLogin();
+  const { setUser, setSession } = useAuthStore();
 
-  const handleLogin = () => {
-    setError("");
+  const form = useForm({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
 
-    if (!email || !password) {
-      setError("Please fill in all fields");
-      return;
+  const handleLogin = async (data) => {
+    try {
+      const promise = LoginQuery.mutateAsync(data);
+      toast.promise(promise, {
+        loading: "Logging in...",
+      });
+
+      const result = await promise;
+      setSession(result.session);
+      const { error, data: UserData } = await supabase
+        .from("users")
+        .select("*")
+        .eq("email", result.user?.email)
+        .single();
+      if (error) {
+        toast.error(`${error}`);
+        return;
+      }
+      setUser(UserData);
+      toast.success(`Welcome Back ${UserData.full_name}`);
+      push("/dashboard/overview");
+    } catch (error) {
+      toast.error(`${error}`);
     }
-
     // Add your login logic here
     console.log("Login attempt:", { email, password });
+    push("/dashboard/overview");
   };
+
+  // useEffect(() => {
+  //   if (LoginQuery.isSuccess) {
+  //     console.log(LoginQuery.data);
+  //     toast.success("Welcome Back");
+  //   }
+  // });
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-accent/5 p-4">
@@ -48,7 +97,9 @@ const LoginPage = ({
               </div>
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
+          <CardTitle className="text-2xl font-bold font-Inter">
+            Welcome Back
+          </CardTitle>
           <CardDescription>
             Sign in to A&G Insurance Vehicle Maintenance Management
           </CardDescription>
@@ -60,44 +111,61 @@ const LoginPage = ({
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
+          <FormProvider {...form}>
+            <form
+              onSubmit={form.handleSubmit(handleLogin)}
+              className="gap-4 flex flex-col"
+            >
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="email"
+                        placeholder="admin@aginsurance.com"
+                        {...field}
+                        // className="w-full"
+                      />
+                    </FormControl>
 
-          <div className="space-y-2">
-            <Label htmlFor="email">Email Address</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="admin@aginsurance.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <div className="relative">
-              <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full pr-10"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {showPassword ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
+                    <FormMessage />
+                  </FormItem>
                 )}
-              </button>
-            </div>
-          </div>
+              />
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="Password"
+                        {...field}
+                        // className="w-full"
+                      />
+                    </FormControl>
 
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button className="cursor-pointer" type="submit">
+                {LoginQuery.isPending ? (
+                  <>
+                    <Spinner />
+                    <span>Submitting...</span>
+                  </>
+                ) : (
+                  "Submit"
+                )}
+              </Button>
+            </form>
+          </FormProvider>
           <div className="flex items-center justify-between text-sm">
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" className="rounded border-border" />
@@ -113,16 +181,12 @@ const LoginPage = ({
         </CardContent>
 
         <CardFooter className="flex flex-col gap-4">
-          <Button onClick={handleLogin} className="w-full">
-            Sign In
-          </Button>
-
           <div className="text-center text-sm text-muted-foreground">
             Don't have an account?{" "}
             <button
               type="button"
-              onClick={onSwitchToRegister}
-              className="text-primary hover:underline font-medium"
+              onClick={() => push("/auth/register")}
+              className="text-primary hover:underline font-medium cursor-pointer"
             >
               Sign up
             </button>

@@ -1,3 +1,4 @@
+"use client";
 import React, { useState } from "react";
 import {
   Card,
@@ -159,18 +160,14 @@ const expenseTypeData = [
 ];
 
 // Dashboard Component
-const Dashboard = ({
-  onNavigate,
-}: {
-  onNavigate: (page: string, vehicleId?: number) => void;
-}) => {
+export const Dashboard = () => {
   const totalVehicles = mockVehicles.length;
   const totalSpent = mockVehicles.reduce((sum, v) => sum + v.totalSpent, 0);
   const totalExpenses = mockExpenses.length;
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-6 lg:p-8">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-background p-4 md:p-6 lg:p-8 w-full ">
+      <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
@@ -180,7 +177,7 @@ const Dashboard = ({
             </p>
           </div>
           <Button
-            onClick={() => onNavigate("vehicles")}
+            // onClick={() => onNavigate("vehicles")}
             className="w-full sm:w-auto"
           >
             <Car className="h-4 w-4 mr-2" />

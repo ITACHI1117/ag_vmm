@@ -1,4 +1,44 @@
-const Register = ({ onSwitchToLogin }: { onSwitchToLogin: () => void }) => {
+"use client";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Spinner } from "@/components/ui/spinner";
+import useProgressBarNavigation from "@/hooks/useProgressBarNavigator";
+import { useRegister } from "@/queries/auth.queries";
+import { registerSchema } from "@/schema/auth";
+import { supabase } from "@/supabse-client";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Shield } from "lucide-react";
+import { useEffect, useState } from "react";
+import { FormProvider, useForm } from "react-hook-form";
+import { toast } from "sonner";
+
+const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     fullName: "",
@@ -8,33 +48,67 @@ const Register = ({ onSwitchToLogin }: { onSwitchToLogin: () => void }) => {
     roleKey: "",
   });
   const [error, setError] = useState("");
+  const { push } = useProgressBarNavigation();
 
-  const handleRegister = () => {
-    setError("");
+  // sign up query
+  const RegisterQuery = useRegister();
 
-    if (
-      !formData.fullName ||
-      !formData.email ||
-      !formData.password ||
-      !formData.role ||
-      !formData.roleKey
-    ) {
-      setError("Please fill in all fields");
-      return;
+  const form = useForm({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      fullName: "",
+      email: "",
+      role: "",
+      roleKey: "",
+      password: "",
+    },
+  });
+
+  const handleRegister = async (data) => {
+    console.log(data);
+    try {
+      const promise = RegisterQuery.mutateAsync({
+        email: data.email,
+        password: data.password,
+      });
+
+      toast.promise(promise, {
+        loading: "Signing In",
+      });
+
+      // await supabase auth sign up to complete
+      const result = await promise;
+      console.log(result);
+
+      // once mutation succeeds, insert the rest of the data in Supabase users table
+      const { fullName, password, roleKey, ...rest } = data;
+      const { error } = await supabase
+        .from("users")
+        .insert({ ...rest, full_name: fullName, role_key: roleKey })
+        .single();
+
+      if (error) {
+        // dosent work yet FIX JOSEPH
+        await supabase.auth.admin.deleteUser(result.user.id);
+        toast.error("User record creation failed, rolled back.");
+        return;
+      }
+
+      toast.success(
+        "Sign Up Successfully, Check your mail for your verification code."
+      );
+      console.log("Registration attempt:", data);
+      push("/auth/login");
+    } catch (error) {
+      toast.error("An error occurred during registration");
+      console.error(error);
     }
-
-    if (formData.password.length < 8) {
-      setError("Password must be at least 8 characters long");
-      return;
-    }
-
-    // Add your registration logic here
-    console.log("Registration attempt:", formData);
   };
 
-  const updateFormData = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
+  useEffect(() => {
+    RegisterQuery.isError &&
+      toast.error(`Error While trying to sign up, ${RegisterQuery.error}`);
+  }, [RegisterQuery.isError]);
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-accent/5 p-4">
@@ -61,84 +135,121 @@ const Register = ({ onSwitchToLogin }: { onSwitchToLogin: () => void }) => {
             </Alert>
           )}
 
-          <div className="space-y-2">
-            <Label htmlFor="fullName">Full Name</Label>
-            <Input
-              id="fullName"
-              type="text"
-              placeholder="John Doe"
-              value={formData.fullName}
-              onChange={(e) => updateFormData("fullName", e.target.value)}
-              className="w-full"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="register-email">Email Address</Label>
-            <Input
-              id="register-email"
-              type="email"
-              placeholder="admin@aginsurance.com"
-              value={formData.email}
-              onChange={(e) => updateFormData("email", e.target.value)}
-              className="w-full"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="role">Role</Label>
-            <Input
-              id="role"
-              type="text"
-              placeholder="e.g., Admin, Manager, Technician"
-              value={formData.role}
-              onChange={(e) => updateFormData("role", e.target.value)}
-              className="w-full"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="roleKey">Role Key</Label>
-            <Input
-              id="roleKey"
-              type="text"
-              placeholder="Enter your role authorization key"
-              value={formData.roleKey}
-              onChange={(e) => updateFormData("roleKey", e.target.value)}
-              className="w-full"
-            />
-            <p className="text-xs text-muted-foreground">
-              Contact your administrator for the role key
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="register-password">Password</Label>
-            <div className="relative">
-              <Input
-                id="register-password"
-                type={showPassword ? "text" : "password"}
-                placeholder="Create a strong password"
-                value={formData.password}
-                onChange={(e) => updateFormData("password", e.target.value)}
-                className="w-full pr-10"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {showPassword ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
+          <FormProvider {...form}>
+            <form
+              onSubmit={form.handleSubmit(handleRegister)}
+              className="gap-4 flex flex-col"
+            >
+              <FormField
+                name="fullName"
+                control={form.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <Input
+                      id="fullName"
+                      type="text"
+                      placeholder="John Doe"
+                      {...field}
+                      className="w-full"
+                    />
+                    <FormMessage />
+                  </FormItem>
                 )}
-              </button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Must be at least 8 characters long
-            </p>
-          </div>
+              />
+              <FormField
+                name="email"
+                control={form.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="admin@aginsuranceplc.com"
+                      {...field}
+                      className="w-full"
+                    />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select Role" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectLabel>Roles</SelectLabel>
+                          <SelectItem value="IT">IT</SelectItem>
+                          <SelectItem value="admin">Admin</SelectItem>
+                          <SelectItem value="staff">Staff</SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Yor role key is a unique ID generated by the IT admin
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                name="roleKey"
+                control={form.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <Input
+                      id="roleKey"
+                      type="text"
+                      placeholder="role Key"
+                      {...field}
+                      className="w-full"
+                    />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                name="password"
+                control={form.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <Input
+                      id="password"
+                      type="text"
+                      placeholder="Password"
+                      {...field}
+                      className="w-full"
+                    />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button
+                disabled={RegisterQuery.isPending}
+                className="cursor-pointer"
+                type="submit"
+              >
+                {RegisterQuery.isPending ? (
+                  <>
+                    <Spinner />
+                    <span>Submitting...</span>
+                  </>
+                ) : (
+                  "Submit"
+                )}
+              </Button>
+            </form>
+          </FormProvider>
 
           <div className="flex items-start gap-2 pt-2">
             <input
@@ -164,18 +275,14 @@ const Register = ({ onSwitchToLogin }: { onSwitchToLogin: () => void }) => {
         </CardContent>
 
         <CardFooter className="flex flex-col gap-4">
-          <Button onClick={handleRegister} className="w-full">
-            Create Account
-          </Button>
-
           <div className="text-center text-sm text-muted-foreground">
             Already have an account?{" "}
             <button
               type="button"
-              onClick={onSwitchToLogin}
-              className="text-primary hover:underline font-medium"
+              onClick={() => push("/auth/login")}
+              className="text-primary hover:underline font-medium cursor-pointer "
             >
-              Sign in
+              Sign In
             </button>
           </div>
         </CardFooter>
