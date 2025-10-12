@@ -102,7 +102,7 @@ export const HeaderNavigation = () => {
                   alt={user && user.full_name}
                 />
                 <AvatarFallback className="bg-primary text-primary-foreground">
-                  {getUserInitials(user && user.full_name)}
+                  {/* {getUserInitials(user && user.full_name)} */} AJ
                 </AvatarFallback>
               </Avatar>
               <div className="hidden md:block text-left">
