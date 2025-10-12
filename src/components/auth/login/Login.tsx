@@ -39,7 +39,7 @@ export const LoginComponent = () => {
   const [error, setError] = useState("");
   const { push } = useProgressBarNavigation();
   const LoginQuery = useLogin();
-  const { setUser, setSession } = useAuthStore();
+  const { setUser } = useAuthStore();
 
   const form = useForm({
     resolver: zodResolver(loginSchema),
@@ -55,9 +55,10 @@ export const LoginComponent = () => {
       toast.promise(promise, {
         loading: "Logging in...",
       });
-
+      // await the login promise
       const result = await promise;
-      setSession(result.session);
+      // fetch user extra information fro the users table
+      // we need the user role stored globally
       const { error, data: UserData } = await supabase
         .from("users")
         .select("*")
@@ -67,6 +68,7 @@ export const LoginComponent = () => {
         toast.error(`${error}`);
         return;
       }
+      // store the user role
       setUser(UserData);
       toast.success(`Welcome Back ${UserData.full_name}`);
       push("/dashboard/overview");

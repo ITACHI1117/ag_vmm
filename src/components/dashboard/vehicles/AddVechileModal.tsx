@@ -1,4 +1,16 @@
-const AddVehicleModal = ({ onClose }: { onClose: () => void }) => {
+import { Button } from "@/components/ui/button";
+import {
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useState } from "react";
+
+export const AddVehicleModal = ({ onClose }: { onClose: () => void }) => {
   const [formData, setFormData] = useState({
     plateNumber: "",
     make: "",

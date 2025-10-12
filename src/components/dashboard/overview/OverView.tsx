@@ -45,6 +45,7 @@ import {
   TrendingUp,
   Calendar,
 } from "lucide-react";
+import useProgressBarNavigation from "@/hooks/useProgressBarNavigator";
 
 // Mock Data
 const mockVehicles = [
@@ -164,6 +165,7 @@ export const Dashboard = () => {
   const totalVehicles = mockVehicles.length;
   const totalSpent = mockVehicles.reduce((sum, v) => sum + v.totalSpent, 0);
   const totalExpenses = mockExpenses.length;
+  const { push } = useProgressBarNavigation();
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-6 lg:p-8 w-full ">
@@ -177,8 +179,8 @@ export const Dashboard = () => {
             </p>
           </div>
           <Button
-            // onClick={() => onNavigate("vehicles")}
-            className="w-full sm:w-auto"
+            onClick={() => push("/dashboard/vehicles")}
+            className="w-full sm:w-auto cursor-pointer"
           >
             <Car className="h-4 w-4 mr-2" />
             View All Vehicles

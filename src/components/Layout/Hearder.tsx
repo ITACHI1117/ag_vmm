@@ -35,12 +35,6 @@ export const HeaderNavigation = () => {
   useEffect(() => {
     console.log(user);
   }, [user]);
-  //   const [user] = useState({
-  //     name: "John Doe",
-  //     email: "john@aginsurance.com",
-  //     image: "", // Add user image URL here
-  //     role: "Admin",
-  //   });
 
   const handleLogout = async () => {
     const SignOut = await supabase.auth.signOut();

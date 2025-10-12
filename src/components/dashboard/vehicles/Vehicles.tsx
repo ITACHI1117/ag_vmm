@@ -1,10 +1,62 @@
-const VehiclesPage = ({
-  onNavigate,
-}: {
-  onNavigate: (page: string, vehicleId?: number) => void;
-}) => {
+"use client";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import useProgressBarNavigation from "@/hooks/useProgressBarNavigator";
+import { ArrowLeft, Plus, Search } from "lucide-react";
+import { useState } from "react";
+import { AddVehicleModal } from "./AddVechileModal";
+import VehicleDetailsComponent from "./VehiclesDetailsComponent";
+
+const mockVehicles = [
+  {
+    id: 1,
+    plateNumber: "ABC-1234",
+    make: "Toyota",
+    model: "Corolla",
+    year: 2020,
+    totalSpent: 125000,
+  },
+  {
+    id: 2,
+    plateNumber: "XYZ-5678",
+    make: "Honda",
+    model: "Accord",
+    year: 2019,
+    totalSpent: 98500,
+  },
+  {
+    id: 3,
+    plateNumber: "DEF-9012",
+    make: "Ford",
+    model: "Explorer",
+    year: 2021,
+    totalSpent: 156000,
+  },
+  {
+    id: 4,
+    plateNumber: "GHI-3456",
+    make: "Nissan",
+    model: "Altima",
+    year: 2020,
+    totalSpent: 87300,
+  },
+  {
+    id: 5,
+    plateNumber: "JKL-7890",
+    make: "Chevrolet",
+    model: "Malibu",
+    year: 2022,
+    totalSpent: 62000,
+  },
+];
+
+export const VehiclesComponent = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [currentScreen, setCurrentScreen] = useState("allVehicles");
+  const [vehicleId, setVehicleId] = useState<number>(1);
 
   const filteredVehicles = mockVehicles.filter(
     (v) =>
@@ -12,20 +64,39 @@ const VehiclesPage = ({
       v.make.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const { back } = useProgressBarNavigation();
+
+  const handleNavigation = () => {
+    if (currentScreen == "allVehicles") {
+      setCurrentScreen("VehicleDetail");
+    } else {
+      setCurrentScreen("allVehicles");
+    }
+  };
+
+  if (currentScreen == "VehicleDetail") {
+    return (
+      <VehicleDetailsComponent
+        vehicleId={vehicleId}
+        handleNavigation={handleNavigation}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background p-4 md:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <Button
+            {/* <Button
               variant="ghost"
-              onClick={() => onNavigate("dashboard")}
+              onClick={() => back()}
               className="mb-2 -ml-3"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Dashboard
-            </Button>
+            </Button> */}
             <h1 className="text-3xl font-bold">Vehicles</h1>
             <p className="text-muted-foreground mt-1">
               Manage your fleet vehicles
@@ -89,7 +160,10 @@ const VehiclesPage = ({
                     <tr
                       key={vehicle.id}
                       className="border-b border-border hover:bg-accent/50 transition-colors cursor-pointer"
-                      onClick={() => onNavigate("vehicle-details", vehicle.id)}
+                      onClick={() => {
+                        setVehicleId(vehicle.id);
+                        handleNavigation();
+                      }}
                     >
                       <td className="py-4 px-6 font-medium">
                         {vehicle.plateNumber}
@@ -106,7 +180,7 @@ const VehiclesPage = ({
                           size="sm"
                           onClick={(e) => {
                             e.stopPropagation();
-                            onNavigate("vehicle-details", vehicle.id);
+                            handleNavigation();
                           }}
                         >
                           View Details

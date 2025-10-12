@@ -12,10 +12,18 @@ import { usePathname } from "next/navigation";
 import { Button } from "../ui/button";
 import useProgressBarNavigation from "@/hooks/useProgressBarNavigator";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/store/authStore";
+import { useEffect } from "react";
+import { Badge } from "../ui/badge";
 
 export const Sidebar = () => {
   const pathname = usePathname();
   const { push } = useProgressBarNavigation();
+  const { user } = useAuthStore();
+
+  useEffect(() => {
+    console.log(user?.role);
+  }, [user]);
 
   const navItems = [
     {
@@ -25,28 +33,35 @@ export const Sidebar = () => {
     },
     {
       title: "Vehicles",
-      href: "/vehicles",
+      href: "/dashboard/vehicles",
       icon: Car,
     },
     {
       title: "Reports",
-      href: "/reports",
+      href: "/dashboard/reports",
       icon: FileText,
     },
     {
-      title: "Documents",
-      href: "/documents",
-      icon: Folder,
+      title: "Generate Role Key",
+      href: "/dashboard/generate-role-key",
+      icon: Settings,
     },
+    // {
+    //   title: "Documents",
+    //   href: "/dashboard/documents",
+    //   icon: Folder,
+    // },
     {
       title: "Notifications",
-      href: "/notifications",
+      href: "/dashboard/notifications",
       icon: Bell,
+      isComingSoon: true,
     },
     {
       title: "Settings",
-      href: "/settings",
+      href: "/dashboard/settings",
       icon: Settings,
+      isComingSoon: true,
     },
   ];
 
@@ -73,13 +88,22 @@ export const Sidebar = () => {
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
+          if (
+            item.href == "/dashboard/generate-role-key" &&
+            user &&
+            user.role != "IT"
+          ) {
+            return;
+          }
 
           return (
             <Button
               key={item.href}
               variant={isActive ? "default" : "ghost"}
+              disabled={item.isComingSoon}
               className={cn(
-                "w-full justify-start gap-3",
+                "w-full justify-start gap-3 cursor-pointer",
+                item.isComingSoon && "text-gray",
                 isActive
                   ? "bg-primary text-primary-foreground hover:bg-primary/90"
                   : "hover:bg-accent"
@@ -88,6 +112,11 @@ export const Sidebar = () => {
             >
               <Icon className="h-5 w-5" />
               <span className="font-medium">{item.title}</span>
+              {item.isComingSoon && (
+                <Badge variant="secondary" className="text-xs">
+                  Coming soon
+                </Badge>
+              )}
             </Button>
           );
         })}

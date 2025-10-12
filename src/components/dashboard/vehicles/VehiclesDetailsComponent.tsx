@@ -1,9 +1,133 @@
-const VehicleDetailsPage = ({
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { ArrowLeft, Download, Eye, Plus } from "lucide-react";
+import { useState } from "react";
+import AddExpenseModal from "./AddExpenseModal";
+const mockVehicles = [
+  {
+    id: 1,
+    plateNumber: "ABC-1234",
+    make: "Toyota",
+    model: "Corolla",
+    year: 2020,
+    totalSpent: 125000,
+  },
+  {
+    id: 2,
+    plateNumber: "XYZ-5678",
+    make: "Honda",
+    model: "Accord",
+    year: 2019,
+    totalSpent: 98500,
+  },
+  {
+    id: 3,
+    plateNumber: "DEF-9012",
+    make: "Ford",
+    model: "Explorer",
+    year: 2021,
+    totalSpent: 156000,
+  },
+  {
+    id: 4,
+    plateNumber: "GHI-3456",
+    make: "Nissan",
+    model: "Altima",
+    year: 2020,
+    totalSpent: 87300,
+  },
+  {
+    id: 5,
+    plateNumber: "JKL-7890",
+    make: "Chevrolet",
+    model: "Malibu",
+    year: 2022,
+    totalSpent: 62000,
+  },
+];
+
+const mockExpenses = [
+  {
+    id: 1,
+    vehicleId: 1,
+    date: "2025-10-05",
+    type: "Oil Change",
+    amount: 15000,
+    description: "Regular maintenance",
+    invoice: "INV-001",
+  },
+  {
+    id: 2,
+    vehicleId: 2,
+    date: "2025-10-03",
+    type: "Tire Replacement",
+    amount: 45000,
+    description: "All 4 tires replaced",
+    invoice: "INV-002",
+  },
+  {
+    id: 3,
+    vehicleId: 1,
+    date: "2025-09-28",
+    type: "Brake Service",
+    amount: 32000,
+    description: "Front brake pads",
+    invoice: "INV-003",
+  },
+  {
+    id: 4,
+    vehicleId: 3,
+    date: "2025-09-25",
+    type: "Engine Repair",
+    amount: 85000,
+    description: "Engine diagnostic and repair",
+    invoice: "INV-004",
+  },
+  {
+    id: 5,
+    vehicleId: 4,
+    date: "2025-09-20",
+    type: "Battery Replacement",
+    amount: 18000,
+    description: "New battery installed",
+    invoice: "INV-005",
+  },
+];
+
+const monthlySpending = [
+  { month: "Jan", amount: 125000 },
+  { month: "Feb", amount: 98000 },
+  { month: "Mar", amount: 145000 },
+  { month: "Apr", amount: 112000 },
+  { month: "May", amount: 168000 },
+  { month: "Jun", amount: 134000 },
+  { month: "Jul", amount: 156000 },
+  { month: "Aug", amount: 189000 },
+  { month: "Sep", amount: 142000 },
+  { month: "Oct", amount: 95000 },
+];
+
+const expenseTypeData = [
+  { name: "Oil Change", value: 45000, color: "#6366f1" },
+  { name: "Tire Replacement", value: 125000, color: "#8b5cf6" },
+  { name: "Brake Service", value: 78000, color: "#ec4899" },
+  { name: "Engine Repair", amount: 210000, color: "#f59e0b" },
+  { name: "Battery", value: 52000, color: "#10b981" },
+];
+
+const VehicleDetailsComponent = ({
   vehicleId,
-  onNavigate,
+  handleNavigation,
 }: {
   vehicleId: number;
-  onNavigate: (page: string) => void;
+  handleNavigation: () => void;
 }) => {
   const vehicle = mockVehicles.find((v) => v.id === vehicleId);
   const vehicleExpenses = mockExpenses.filter((e) => e.vehicleId === vehicleId);
@@ -25,7 +149,7 @@ const VehicleDetailsPage = ({
         <div>
           <Button
             variant="ghost"
-            onClick={() => onNavigate("vehicles")}
+            onClick={() => handleNavigation()}
             className="mb-2 -ml-3"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -165,3 +289,5 @@ const VehicleDetailsPage = ({
     </div>
   );
 };
+
+export default VehicleDetailsComponent;
