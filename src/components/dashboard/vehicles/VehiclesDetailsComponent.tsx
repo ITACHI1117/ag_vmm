@@ -7,9 +7,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, Download, Eye, Plus } from "lucide-react";
-import { useState } from "react";
+import { ArrowLeft, Download, Eye, Plus, Search } from "lucide-react";
+import { useEffect, useState } from "react";
 import AddExpenseModal from "./AddExpenseModal";
+import { useGetVehicle } from "@/queries/vehicle.queries";
+import { useGetVehicleExpenses } from "@/queries/expense.queries";
+import { useDebounce } from "@/hooks/useDebounce";
+import { Input } from "@/components/ui/input";
+import { MonthDayYear } from "@/lib/formatDate";
+import useProgressBarNavigation from "@/hooks/useProgressBarNavigator";
 const mockVehicles = [
   {
     id: 1,
@@ -101,27 +107,6 @@ const mockExpenses = [
   },
 ];
 
-const monthlySpending = [
-  { month: "Jan", amount: 125000 },
-  { month: "Feb", amount: 98000 },
-  { month: "Mar", amount: 145000 },
-  { month: "Apr", amount: 112000 },
-  { month: "May", amount: 168000 },
-  { month: "Jun", amount: 134000 },
-  { month: "Jul", amount: 156000 },
-  { month: "Aug", amount: 189000 },
-  { month: "Sep", amount: 142000 },
-  { month: "Oct", amount: 95000 },
-];
-
-const expenseTypeData = [
-  { name: "Oil Change", value: 45000, color: "#6366f1" },
-  { name: "Tire Replacement", value: 125000, color: "#8b5cf6" },
-  { name: "Brake Service", value: 78000, color: "#ec4899" },
-  { name: "Engine Repair", amount: 210000, color: "#f59e0b" },
-  { name: "Battery", value: 52000, color: "#10b981" },
-];
-
 const VehicleDetailsComponent = ({
   vehicleId,
   handleNavigation,
@@ -129,10 +114,29 @@ const VehicleDetailsComponent = ({
   vehicleId: number;
   handleNavigation: () => void;
 }) => {
-  const vehicle = mockVehicles.find((v) => v.id === vehicleId);
-  const vehicleExpenses = mockExpenses.filter((e) => e.vehicleId === vehicleId);
+  const vehicle = mockVehicles.find((v) => v.id === 1);
+  const vehicleExpenses = mockExpenses.filter((e) => e.vehicleId === 1);
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState();
 
+  // Get Vehicle Query
+  const GetVehicleQuery = useGetVehicle(vehicleId);
+
+  // Get Vehicle Expenses
+  // debounce searchTerm
+  const debounceSearchTerm = useDebounce(searchTerm, 500);
+  const GetVehicleExpensesQuery = useGetVehicleExpenses(
+    debounceSearchTerm,
+    vehicleId
+  );
+
+  useEffect(() => {
+    if (GetVehicleExpensesQuery.isSuccess) {
+      console.log(GetVehicleExpensesQuery.data);
+    }
+  }, [GetVehicleExpensesQuery.isSuccess]);
+
+  if (GetVehicleQuery.isPending) return <div>Loading...</div>;
   if (!vehicle) return <div>Vehicle not found</div>;
 
   const handleExport = (format: "csv" | "pdf") => {
@@ -141,6 +145,8 @@ const VehicleDetailsComponent = ({
       `Exporting ${format.toUpperCase()} report for ${vehicle.plateNumber}`
     );
   };
+
+  const { push } = useProgressBarNavigation();
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-6 lg:p-8">
@@ -155,9 +161,13 @@ const VehicleDetailsComponent = ({
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Vehicles
           </Button>
-          <h1 className="text-3xl font-bold">{vehicle.plateNumber}</h1>
+          <h1 className="text-3xl font-bold">
+            {GetVehicleQuery.data && GetVehicleQuery.data.plate_number}
+          </h1>
           <p className="text-muted-foreground mt-1">
-            {vehicle.make} {vehicle.model} ({vehicle.year})
+            {GetVehicleQuery.data && GetVehicleQuery.data.make}{" "}
+            {GetVehicleQuery.data && GetVehicleQuery.data.model} (
+            {GetVehicleQuery.data && GetVehicleQuery.data.year})
           </p>
         </div>
 
@@ -170,19 +180,27 @@ const VehicleDetailsComponent = ({
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground">Plate Number</p>
-                <p className="text-lg font-semibold">{vehicle.plateNumber}</p>
+                <p className="text-lg font-semibold">
+                  {GetVehicleQuery.data && GetVehicleQuery.data.plate_number}
+                </p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Make</p>
-                <p className="text-lg font-semibold">{vehicle.make}</p>
+                <p className="text-lg font-semibold">
+                  {GetVehicleQuery.data && GetVehicleQuery.data.make}
+                </p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Model</p>
-                <p className="text-lg font-semibold">{vehicle.model}</p>
+                <p className="text-lg font-semibold">
+                  {GetVehicleQuery.data && GetVehicleQuery.data.model}
+                </p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Year</p>
-                <p className="text-lg font-semibold">{vehicle.year}</p>
+                <p className="text-lg font-semibold">
+                  {GetVehicleQuery.data && GetVehicleQuery.data.year}
+                </p>
               </div>
             </div>
             <div className="mt-6 pt-6 border-t border-border">
@@ -190,7 +208,10 @@ const VehicleDetailsComponent = ({
                 Total Amount Spent
               </p>
               <p className="text-3xl font-bold text-primary mt-1">
-                ₦{vehicle.totalSpent.toLocaleString()}
+                ₦
+                {GetVehicleQuery.data.total_spent
+                  ? GetVehicleQuery.data.total_spent
+                  : "0.00"}
               </p>
             </div>
           </CardContent>
@@ -238,6 +259,17 @@ const VehicleDetailsComponent = ({
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
+              {/* Search */}
+              {/* <div className="relative mb-4">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by type..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div> */}
+
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border">
@@ -259,27 +291,40 @@ const VehicleDetailsComponent = ({
                   </tr>
                 </thead>
                 <tbody>
-                  {vehicleExpenses.map((expense) => (
-                    <tr
-                      key={expense.id}
-                      className="border-b border-border hover:bg-accent/50 transition-colors"
-                    >
-                      <td className="py-3 px-4 text-sm">{expense.date}</td>
-                      <td className="py-3 px-4 text-sm">{expense.type}</td>
-                      <td className="py-3 px-4 text-sm font-medium">
-                        ₦{expense.amount.toLocaleString()}
-                      </td>
-                      <td className="py-3 px-4 text-sm">
-                        {expense.description}
-                      </td>
-                      <td className="py-3 px-4 text-sm">
-                        <Button variant="ghost" size="sm">
-                          <Eye className="h-4 w-4 mr-1" />
-                          {expense.invoice}
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
+                  {GetVehicleExpensesQuery.data &&
+                  GetVehicleExpensesQuery.data.length > 0 ? (
+                    GetVehicleExpensesQuery.data.map((expense) => (
+                      <tr
+                        key={expense.id}
+                        className="border-b border-border hover:bg-accent/50 transition-colors"
+                      >
+                        <td className="py-3 px-4 text-sm">
+                          {MonthDayYear(expense.created_at)}
+                        </td>
+                        <td className="py-3 px-4 text-sm">
+                          {expense.expense_type}
+                        </td>
+                        <td className="py-3 px-4 text-sm font-medium">
+                          ₦{expense.amount.toLocaleString()}
+                        </td>
+                        <td className="py-3 px-4 text-sm">
+                          {expense.description}
+                        </td>
+                        <td className="py-3 px-4 text-sm">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => push(expense.invoice_url)}
+                          >
+                            <Eye className="h-4 w-4 mr-1" />
+                            {expense.invoice}
+                          </Button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <h1>No Expense Data</h1>
+                  )}
                 </tbody>
               </table>
             </div>

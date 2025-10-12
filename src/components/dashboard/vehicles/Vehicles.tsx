@@ -5,51 +5,37 @@ import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import useProgressBarNavigation from "@/hooks/useProgressBarNavigator";
 import { ArrowLeft, Plus, Search } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AddVehicleModal } from "./AddVechileModal";
 import VehicleDetailsComponent from "./VehiclesDetailsComponent";
+import { useGetAllVehicles } from "@/queries/vehicle.queries";
+import { useDebounce } from "@/hooks/useDebounce";
 
 const mockVehicles = [
-  {
-    id: 1,
-    plateNumber: "ABC-1234",
-    make: "Toyota",
-    model: "Corolla",
-    year: 2020,
-    totalSpent: 125000,
-  },
-  {
-    id: 2,
-    plateNumber: "XYZ-5678",
-    make: "Honda",
-    model: "Accord",
-    year: 2019,
-    totalSpent: 98500,
-  },
-  {
-    id: 3,
-    plateNumber: "DEF-9012",
-    make: "Ford",
-    model: "Explorer",
-    year: 2021,
-    totalSpent: 156000,
-  },
-  {
-    id: 4,
-    plateNumber: "GHI-3456",
-    make: "Nissan",
-    model: "Altima",
-    year: 2020,
-    totalSpent: 87300,
-  },
-  {
-    id: 5,
-    plateNumber: "JKL-7890",
-    make: "Chevrolet",
-    model: "Malibu",
-    year: 2022,
-    totalSpent: 62000,
-  },
+  // {
+  //   id: 1,
+  //   plateNumber: "ABC-1234",
+  //   make: "Toyota",
+  //   model: "Corolla",
+  //   year: 2020,
+  //   totalSpent: 125000,
+  // },
+  // {
+  //   id: 2,
+  //   plateNumber: "XYZ-5678",
+  //   make: "Honda",
+  //   model: "Accord",
+  //   year: 2019,
+  //   totalSpent: 98500,
+  // },
+  // {
+  //   id: 3,
+  //   plateNumber: "DEF-9012",
+  //   make: "Ford",
+  //   model: "Explorer",
+  //   year: 2021,
+  //   totalSpent: 156000,
+  // },
 ];
 
 export const VehiclesComponent = () => {
@@ -58,11 +44,14 @@ export const VehiclesComponent = () => {
   const [currentScreen, setCurrentScreen] = useState("allVehicles");
   const [vehicleId, setVehicleId] = useState<number>(1);
 
-  const filteredVehicles = mockVehicles.filter(
-    (v) =>
-      v.plateNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      v.make.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Get all vehicles Query
+  // debounce searchTerm
+  const debounceSearchTerm = useDebounce(searchTerm, 500);
+  const GetAllVehiclesQuery = useGetAllVehicles(debounceSearchTerm);
+
+  useEffect(() => {
+    GetAllVehiclesQuery.isSuccess && console.log(GetAllVehiclesQuery.data);
+  }, [GetAllVehiclesQuery.isSuccess]);
 
   const { back } = useProgressBarNavigation();
 
@@ -73,6 +62,10 @@ export const VehiclesComponent = () => {
       setCurrentScreen("allVehicles");
     }
   };
+
+  if (GetAllVehiclesQuery.isPending) {
+    return <h1>Loading...</h1>;
+  }
 
   if (currentScreen == "VehicleDetail") {
     return (
@@ -104,7 +97,7 @@ export const VehiclesComponent = () => {
           </div>
           <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
             <DialogTrigger asChild>
-              <Button className="w-full sm:w-auto">
+              <Button className="w-full sm:w-auto cursor-pointer">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Vehicle
               </Button>
@@ -114,19 +107,19 @@ export const VehiclesComponent = () => {
         </div>
 
         {/* Search */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by plate number or make..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </CardContent>
-        </Card>
+        {/* <Card>
+          <CardContent className="pt-6"> */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by plate number, make or model..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        {/* </CardContent>
+        </Card> */}
 
         {/* Vehicles Table */}
         <Card>
@@ -148,6 +141,9 @@ export const VehiclesComponent = () => {
                       Year
                     </th>
                     <th className="text-left py-4 px-6 font-medium text-sm">
+                      Added By
+                    </th>
+                    <th className="text-left py-4 px-6 font-medium text-sm">
                       Total Spent
                     </th>
                     <th className="text-left py-4 px-6 font-medium text-sm">
@@ -156,38 +152,47 @@ export const VehiclesComponent = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredVehicles.map((vehicle) => (
-                    <tr
-                      key={vehicle.id}
-                      className="border-b border-border hover:bg-accent/50 transition-colors cursor-pointer"
-                      onClick={() => {
-                        setVehicleId(vehicle.id);
-                        handleNavigation();
-                      }}
-                    >
-                      <td className="py-4 px-6 font-medium">
-                        {vehicle.plateNumber}
-                      </td>
-                      <td className="py-4 px-6">{vehicle.make}</td>
-                      <td className="py-4 px-6">{vehicle.model}</td>
-                      <td className="py-4 px-6">{vehicle.year}</td>
-                      <td className="py-4 px-6 font-medium">
-                        ₦{vehicle.totalSpent.toLocaleString()}
-                      </td>
-                      <td className="py-4 px-6">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
+                  {GetAllVehiclesQuery.data &&
+                  GetAllVehiclesQuery.data.length > 0
+                    ? GetAllVehiclesQuery.data.map((vehicle) => (
+                        <tr
+                          key={vehicle.id}
+                          className="border-b border-border hover:bg-accent/50 transition-colors cursor-pointer"
+                          onClick={() => {
+                            setVehicleId(vehicle.id);
                             handleNavigation();
                           }}
                         >
-                          View Details
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
+                          <td className="py-4 px-6 font-medium">
+                            {vehicle.plate_number}
+                          </td>
+                          <td className="py-4 px-6">{vehicle.make}</td>
+                          <td className="py-4 px-6">{vehicle.model}</td>
+                          <td className="py-4 px-6">{vehicle.year}</td>
+                          <td className="py-4 px-6">
+                            {vehicle.users.full_name}
+                          </td>
+                          <td className="py-4 px-6 font-medium">
+                            ₦
+                            {vehicle.total_spent
+                              ? vehicle.total_spent.toLocaleString()
+                              : "0.00"}
+                          </td>
+                          <td className="py-4 px-6">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleNavigation();
+                              }}
+                            >
+                              View Details
+                            </Button>
+                          </td>
+                        </tr>
+                      ))
+                    : "No Vehicles Found"}
                 </tbody>
               </table>
             </div>
