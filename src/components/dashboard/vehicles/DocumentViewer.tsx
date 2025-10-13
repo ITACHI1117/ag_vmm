@@ -34,8 +34,13 @@ export const DocumentViewerDialog = ({
   );
 
   const currentDoc = allDocuments[currentIndex];
-  const isImage = currentDoc?.type.startsWith("image/");
-  const isPDF = currentDoc?.type === "application/pdf";
+  const fileName = currentDoc.file_name;
+  const isImage =
+    fileName.endsWith(".jpg") ||
+    fileName.endsWith(".jpeg") ||
+    fileName.endsWith(".png");
+
+  const isPDF = fileName.endsWith(".pdf");
   const isViewable = isImage || isPDF;
 
   const handleNext = () => {
@@ -51,21 +56,27 @@ export const DocumentViewerDialog = ({
   };
 
   const handleDownload = () => {
-    window.open(currentDoc.url, "_blank");
+    window.open(currentDoc.file_url, "_blank");
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] p-0">
+      <DialogContent className="max-w-6xl max-h-[90vh] p-0">
         <DialogHeader className="p-6 pb-4">
           <div className="flex items-center justify-between">
             <div className="flex-1 min-w-0">
-              <DialogTitle className="truncate">{currentDoc?.name}</DialogTitle>
+              <DialogTitle
+                className={`block w-72 overflow-hidden whitespace-nowrap ${
+                  currentDoc?.file_name.length >= 20 && "text-sm"
+                } text-ellipsis`}
+              >
+                {currentDoc?.file_name}
+              </DialogTitle>
               <DialogDescription className="mt-1">
                 Document {currentIndex + 1} of {allDocuments.length}
               </DialogDescription>
             </div>
-            <div className="flex items-center gap-2 ml-4">
+            <div className="flex items-center gap-2 ml-4 mt-6">
               <Button
                 variant="outline"
                 size="icon"
@@ -77,7 +88,7 @@ export const DocumentViewerDialog = ({
               <Button
                 variant="outline"
                 size="icon"
-                onClick={() => window.open(currentDoc.url, "_blank")}
+                onClick={() => window.open(currentDoc.file_url, "_blank")}
                 title="Open in new tab"
               >
                 <ExternalLink className="h-4 w-4" />
@@ -115,7 +126,7 @@ export const DocumentViewerDialog = ({
           {isImage ? (
             <div className="relative w-full h-full flex items-center justify-center p-4">
               <Image
-                src={currentDoc.url}
+                src={currentDoc.file_url}
                 alt={currentDoc.name}
                 width={800}
                 height={600}
@@ -124,7 +135,7 @@ export const DocumentViewerDialog = ({
             </div>
           ) : isPDF ? (
             <iframe
-              src={currentDoc.url}
+              src={currentDoc.file_url}
               className="w-full h-full min-h-[500px]"
               title={currentDoc.name}
             />
@@ -142,7 +153,7 @@ export const DocumentViewerDialog = ({
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => window.open(currentDoc.url, "_blank")}
+                  onClick={() => window.open(currentDoc.file_url, "_blank")}
                 >
                   <ExternalLink className="h-4 w-4 mr-2" />
                   Open in New Tab

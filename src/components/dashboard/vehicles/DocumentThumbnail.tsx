@@ -10,8 +10,14 @@ export const DocumentThumbnail = ({
   document: any;
   onClick: () => void;
 }) => {
-  const isImage = document.type.startsWith("image/");
-  const isPDF = document.type === "application/pdf";
+  const fileName = document.file_name.toLowerCase();
+
+  const isImage =
+    fileName.endsWith(".jpg") ||
+    fileName.endsWith(".jpeg") ||
+    fileName.endsWith(".png");
+
+  const isPDF = fileName.endsWith(".pdf");
 
   const getFileIcon = () => {
     if (isPDF) return <FileText className="h-8 w-8 text-red-500" />;
@@ -32,8 +38,8 @@ export const DocumentThumbnail = ({
     >
       {isImage ? (
         <Image
-          src={document.url}
-          alt={document.name}
+          src={document.file_url}
+          alt={document.file_name}
           fill
           className="object-cover group-hover:scale-105 transition-transform"
         />

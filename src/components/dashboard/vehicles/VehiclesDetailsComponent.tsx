@@ -350,11 +350,24 @@ const VehicleDetailsComponent = ({
             </div>
           </CardContent>
         </Card>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {mockComplianceData.map((compliance) => (
-            <ComplianceCard key={compliance.id} compliance={compliance} />
-          ))}
+        <div>
+          <h1 className="text-3xl font-bold">Vehicle Compliance</h1>
+          <p className="text-muted-foreground mt-1">
+            Monitor your vehicle compliance
+          </p>
         </div>
+        {GetComplianceDataQuery.data &&
+        GetComplianceDataQuery.data.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {GetComplianceDataQuery.data.map((compliance) => (
+              <ComplianceCard key={compliance.id} compliance={compliance} />
+            ))}
+          </div>
+        ) : (
+          <div>
+            <p>No compliance found</p>
+          </div>
+        )}
       </div>
     </div>
   );

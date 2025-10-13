@@ -36,11 +36,11 @@ export const Sidebar = () => {
       href: "/dashboard/vehicles",
       icon: Car,
     },
-    {
-      title: "Reports",
-      href: "/dashboard/reports",
-      icon: FileText,
-    },
+    // {
+    //   title: "Reports",
+    //   href: "/dashboard/reports",
+    //   icon: FileText,
+    // },
     {
       title: "Generate Role Key",
       href: "/dashboard/generate-role-key",

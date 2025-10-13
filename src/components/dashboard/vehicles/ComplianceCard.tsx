@@ -50,7 +50,7 @@ export const ComplianceCard = ({ compliance }: { compliance: any }) => {
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
                 <div className="font-mono text-sm font-bold px-2 py-1 bg-primary/10 text-primary rounded">
-                  {compliance.vehiclePlateNumber}
+                  {compliance.vehicles.plate_number}
                 </div>
                 <Badge
                   variant="outline"
@@ -63,7 +63,7 @@ export const ComplianceCard = ({ compliance }: { compliance: any }) => {
                 </Badge>
               </div>
               <CardTitle className="text-lg">
-                {compliance.complianceType}
+                {compliance.compliance_types.name}
               </CardTitle>
             </div>
           </div>
@@ -76,38 +76,44 @@ export const ComplianceCard = ({ compliance }: { compliance: any }) => {
               <p className="text-muted-foreground text-xs mb-1">
                 Document Number
               </p>
-              <p className="font-medium">{compliance.documentNumber}</p>
+              <p className="font-medium">{compliance.document_number}</p>
             </div>
             <div>
               <p className="text-muted-foreground text-xs mb-1">Issue Date</p>
               <p className="font-medium flex items-center gap-1">
                 <Calendar className="h-3 w-3" />
-                {format(new Date(compliance.issueDate), "MMM dd, yyyy")}
+                {compliance.issue_date
+                  ? format(new Date(compliance.issue_date), "MMM dd, yyyy")
+                  : "—"}
               </p>
             </div>
             <div>
               <p className="text-muted-foreground text-xs mb-1">Expiry Date</p>
               <p className="font-medium flex items-center gap-1">
                 <Calendar className="h-3 w-3" />
-                {format(new Date(compliance.expiryDate), "MMM dd, yyyy")}
+                {compliance.expiry_date
+                  ? format(new Date(compliance.expiry_date), "MMM dd, yyyy")
+                  : "—"}
               </p>
             </div>
             <div>
               <p className="text-muted-foreground text-xs mb-1">Created</p>
               <p className="font-medium">
-                {format(new Date(compliance.createdAt), "MMM dd, yyyy")}
+                {compliance.created_at
+                  ? format(new Date(compliance.created_at), "MMM dd, yyyy")
+                  : "—"}
               </p>
             </div>
           </div>
 
           {/* Documents Horizontal Scroll */}
-          {compliance.documents.length > 0 && (
+          {compliance.compliance_files.length > 0 && (
             <div>
               <p className="text-sm font-medium mb-2">
-                Documents ({compliance.documents.length})
+                Documents ({compliance.compliance_files.length})
               </p>
               <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
-                {compliance.documents.map((document: any) => (
+                {compliance.compliance_files.map((document: any) => (
                   <DocumentThumbnail
                     key={document.id}
                     document={document}
@@ -129,7 +135,7 @@ export const ComplianceCard = ({ compliance }: { compliance: any }) => {
             setIsViewerOpen(false);
             setSelectedDocument(null);
           }}
-          allDocuments={compliance.documents}
+          allDocuments={compliance.compliance_files}
         />
       )}
     </>

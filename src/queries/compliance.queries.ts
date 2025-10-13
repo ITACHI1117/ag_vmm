@@ -65,13 +65,17 @@ export const useGetVehicleCompliance = (vehicle_id) => {
         .from("vehicle_compliance")
         .select(
           `
+          id,
             type_id,
             document_number,
             issue_date,
             expiry_date,
             status,
+            created_at,
+            compliance_types ( name ),
             vehicles (plate_number),
             compliance_files (
+            id,
       file_url,
       file_name
     )
