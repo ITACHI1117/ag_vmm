@@ -18,7 +18,7 @@ export const useRegister = () => {
   return useMutation({
     mutationFn: async (data) => {
       const res = await supabase.auth.signUp({
-        data,
+        ...data,
         options: {
           emailRedirectTo: `${SITE_URL}/auth/callback`,
         },
