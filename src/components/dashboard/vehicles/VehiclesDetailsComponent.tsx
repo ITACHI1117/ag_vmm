@@ -7,7 +7,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, Download, Eye, Plus, Search } from "lucide-react";
+import { ArrowLeft, Download, Eye, Plus, Search, Trash } from "lucide-react";
 import { useEffect, useState } from "react";
 import AddExpenseModal from "./AddExpenseModal";
 import {
@@ -19,94 +19,82 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { Input } from "@/components/ui/input";
 import { MonthDayYear } from "@/lib/formatDate";
 import useProgressBarNavigation from "@/hooks/useProgressBarNavigator";
-const mockVehicles = [
-  {
-    id: 1,
-    plateNumber: "ABC-1234",
-    make: "Toyota",
-    model: "Corolla",
-    year: 2020,
-    totalSpent: 125000,
-  },
-  {
-    id: 2,
-    plateNumber: "XYZ-5678",
-    make: "Honda",
-    model: "Accord",
-    year: 2019,
-    totalSpent: 98500,
-  },
-  {
-    id: 3,
-    plateNumber: "DEF-9012",
-    make: "Ford",
-    model: "Explorer",
-    year: 2021,
-    totalSpent: 156000,
-  },
-  {
-    id: 4,
-    plateNumber: "GHI-3456",
-    make: "Nissan",
-    model: "Altima",
-    year: 2020,
-    totalSpent: 87300,
-  },
-  {
-    id: 5,
-    plateNumber: "JKL-7890",
-    make: "Chevrolet",
-    model: "Malibu",
-    year: 2022,
-    totalSpent: 62000,
-  },
-];
+import AddComplianceModal from "./AddComplianceModal";
+import { ComplianceCard } from "./ComplianceCard";
 
-const mockExpenses = [
+// Mock Data
+const mockComplianceData = [
   {
     id: 1,
-    vehicleId: 1,
-    date: "2025-10-05",
-    type: "Oil Change",
-    amount: 15000,
-    description: "Regular maintenance",
-    invoice: "INV-001",
+    vehiclePlateNumber: "ABC-1234",
+    complianceType: "Insurance",
+    documentNumber: "INS-2024-001",
+    issueDate: "2024-01-15",
+    expiryDate: "2025-01-15",
+    createdAt: "2024-01-10",
+    status: "active",
+    documents: [
+      {
+        id: 1,
+        name: "insurance-certificate.pdf",
+        url: "https://example.com/doc1.pdf",
+        type: "application/pdf",
+      },
+      {
+        id: 2,
+        name: "insurance-photo.jpg",
+        url: "https://images.unsplash.com/photo-1450101499163-c8848c66ca85",
+        type: "image/jpeg",
+      },
+    ],
   },
   {
     id: 2,
-    vehicleId: 2,
-    date: "2025-10-03",
-    type: "Tire Replacement",
-    amount: 45000,
-    description: "All 4 tires replaced",
-    invoice: "INV-002",
+    vehiclePlateNumber: "XYZ-5678",
+    complianceType: "Road Worthiness",
+    documentNumber: "RW-2024-045",
+    issueDate: "2024-03-20",
+    expiryDate: "2025-03-20",
+    createdAt: "2024-03-15",
+    status: "expiring_soon",
+    documents: [
+      {
+        id: 3,
+        name: "roadworthiness-cert.pdf",
+        url: "https://example.com/doc2.pdf",
+        type: "application/pdf",
+      },
+      {
+        id: 4,
+        name: "vehicle-inspection.jpg",
+        url: "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7",
+        type: "image/jpeg",
+      },
+      {
+        id: 5,
+        name: "inspection-report.docx",
+        url: "https://example.com/doc3.docx",
+        type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      },
+    ],
   },
   {
     id: 3,
-    vehicleId: 1,
-    date: "2025-09-28",
-    type: "Brake Service",
-    amount: 32000,
-    description: "Front brake pads",
-    invoice: "INV-003",
-  },
-  {
-    id: 4,
-    vehicleId: 3,
-    date: "2025-09-25",
-    type: "Engine Repair",
-    amount: 85000,
-    description: "Engine diagnostic and repair",
-    invoice: "INV-004",
-  },
-  {
-    id: 5,
-    vehicleId: 4,
-    date: "2025-09-20",
-    type: "Battery Replacement",
-    amount: 18000,
-    description: "New battery installed",
-    invoice: "INV-005",
+    vehiclePlateNumber: "DEF-9012",
+    complianceType: "Vehicle License",
+    documentNumber: "VL-2024-089",
+    issueDate: "2024-02-10",
+    expiryDate: "2024-11-10",
+    createdAt: "2024-02-05",
+    status: "expired",
+    documents: [
+      {
+        id: 6,
+        name: "license-document.pdf",
+        url: "https://example.com/doc4.pdf",
+        type: "application/pdf",
+      },
+    ],
   },
 ];
 
@@ -117,9 +105,9 @@ const VehicleDetailsComponent = ({
   vehicleId: number;
   handleNavigation: () => void;
 }) => {
-  const vehicle = mockVehicles.find((v) => v.id === 1);
-  const vehicleExpenses = mockExpenses.filter((e) => e.vehicleId === 1);
+  // const vehicle = mockVehicles.find((v) => v.id === 1);
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
+  const [isAddComplianceOpen, setIsAddComplianceOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState();
 
   // Get Vehicle Query
@@ -144,14 +132,14 @@ const VehicleDetailsComponent = ({
   }, [GetVehicleExpensesQuery.isSuccess]);
 
   if (GetVehicleQuery.isPending) return <div>Loading...</div>;
-  if (!vehicle) return <div>Vehicle not found</div>;
+  // if (!vehicle) return <div>Vehicle not found</div>;
 
-  const handleExport = (format: "csv" | "pdf") => {
-    console.log(`Exporting ${format} for vehicle ${vehicle.plateNumber}`);
-    alert(
-      `Exporting ${format.toUpperCase()} report for ${vehicle.plateNumber}`
-    );
-  };
+  // const handleExport = (format: "csv" | "pdf") => {
+  //   console.log(`Exporting ${format} for vehicle ${vehicle.plateNumber}`);
+  //   alert(
+  //     `Exporting ${format.toUpperCase()} report for ${vehicle.plateNumber}`
+  //   );
+  // };
 
   const { push } = useProgressBarNavigation();
 
@@ -238,9 +226,24 @@ const VehicleDetailsComponent = ({
               onClose={() => setIsAddExpenseOpen(false)}
             />
           </Dialog>
+          <Dialog
+            open={isAddComplianceOpen}
+            onOpenChange={setIsAddComplianceOpen}
+          >
+            <DialogTrigger asChild>
+              <Button className="w-full sm:w-auto">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Vehicle Compliance
+              </Button>
+            </DialogTrigger>
+            <AddComplianceModal
+              vehicleId={vehicleId}
+              onClose={() => setIsAddComplianceOpen(false)}
+            />
+          </Dialog>
           <Button
             variant="outline"
-            onClick={() => handleExport("csv")}
+            // onClick={() => handleExport("csv")}
             className="w-full sm:w-auto"
           >
             <Download className="h-4 w-4 mr-2" />
@@ -248,7 +251,7 @@ const VehicleDetailsComponent = ({
           </Button>
           <Button
             variant="outline"
-            onClick={() => handleExport("pdf")}
+            // onClick={() => handleExport("pdf")}
             className="w-full sm:w-auto"
           >
             <Download className="h-4 w-4 mr-2" />
@@ -324,7 +327,13 @@ const VehicleDetailsComponent = ({
                             onClick={() => push(expense.invoice_url)}
                           >
                             <Eye className="h-4 w-4 mr-1" />
-                            {expense.invoice}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => push(expense.invoice_url)}
+                          >
+                            <Trash className="h-4 w-4 mr-1 text-red-500" />
                           </Button>
                         </td>
                       </tr>
@@ -337,6 +346,11 @@ const VehicleDetailsComponent = ({
             </div>
           </CardContent>
         </Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {mockComplianceData.map((compliance) => (
+            <ComplianceCard key={compliance.id} compliance={compliance} />
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -1,0 +1,57 @@
+import { supabase } from "@/supabse-client";
+import { useMutation, useQuery } from "@tanstack/react-query";
+
+export const useAddCompliance = () => {
+  return useMutation({
+    mutationFn: async (data) => {
+      const { data: res, error } = await supabase
+        .from("vehicle_compliance")
+        .insert(data)
+        .select()
+        .single();
+      if (error) throw error;
+      return res;
+    },
+  });
+};
+
+// Delete compliance
+export const useDeleteCompliance = () => {
+  return useMutation({
+    mutationFn: async (compliance_id) => {
+      const { data, error } = await supabase
+        .from("vehicle_compliance")
+        .delete()
+        .eq("id", compliance_id);
+      if (error) throw error;
+      return data;
+    },
+  });
+};
+
+// get compliance types
+export const useGetComplianceTypes = () => {
+  return useQuery({
+    queryKey: ["get-compliance-types"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("compliance_types")
+        .select("*");
+      if (error) throw error;
+      return data;
+    },
+  });
+};
+
+// Upload compliance_ files
+export const useUploadComplianceFiles = () => {
+  return useMutation({
+    mutationFn: async (data) => {
+      const { data: res, error } = await supabase
+        .from("compliance_files")
+        .insert(data);
+      if (error) throw error;
+      return res;
+    },
+  });
+};
