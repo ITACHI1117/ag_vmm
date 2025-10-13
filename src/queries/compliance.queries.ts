@@ -55,3 +55,44 @@ export const useUploadComplianceFiles = () => {
     },
   });
 };
+
+// Get vehicle compliance
+export const useGetVehicleCompliance = (vehicle_id) => {
+  return useQuery({
+    queryKey: ["get-compliance-data", vehicle_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vehicle_compliance")
+        .select(
+          `
+            type_id,
+            document_number,
+            issue_date,
+            expiry_date,
+            status,
+            vehicles (plate_number),
+            compliance_files (
+      file_url,
+      file_name
+    )
+            `
+        )
+        .eq("vehicle_id", vehicle_id);
+
+      if (error) throw error;
+      return data;
+    },
+  });
+};
+
+// get compliance files
+export const useGetComplianceFiles = (vehicle_compliance_id) => {
+  return useQuery({
+    queryKey: ["get-compliance-files", vehicle_compliance_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("compliance_files")
+        .select("*");
+    },
+  });
+};

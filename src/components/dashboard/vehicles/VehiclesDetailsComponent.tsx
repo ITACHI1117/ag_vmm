@@ -21,6 +21,7 @@ import { MonthDayYear } from "@/lib/formatDate";
 import useProgressBarNavigation from "@/hooks/useProgressBarNavigator";
 import AddComplianceModal from "./AddComplianceModal";
 import { ComplianceCard } from "./ComplianceCard";
+import { useGetVehicleCompliance } from "@/queries/compliance.queries";
 
 // Mock Data
 const mockComplianceData = [
@@ -125,11 +126,14 @@ const VehicleDetailsComponent = ({
   const GetTotalAmountSpentOnVehicleQuery =
     useGetTotalAmountSpentOnVehicle(vehicleId);
 
+  // Get Compliance Data
+  const GetComplianceDataQuery = useGetVehicleCompliance(vehicleId);
+
   useEffect(() => {
-    if (GetVehicleExpensesQuery.isSuccess) {
-      console.log(GetVehicleExpensesQuery.data);
+    if (GetComplianceDataQuery.isSuccess) {
+      console.log(GetComplianceDataQuery.data);
     }
-  }, [GetVehicleExpensesQuery.isSuccess]);
+  }, [GetComplianceDataQuery.isSuccess]);
 
   if (GetVehicleQuery.isPending) return <div>Loading...</div>;
   // if (!vehicle) return <div>Vehicle not found</div>;
