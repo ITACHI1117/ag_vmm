@@ -33,7 +33,7 @@ import { useRegister } from "@/queries/auth.queries";
 import { registerSchema } from "@/schema/auth";
 import { supabase } from "@/supabse-client";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Shield } from "lucide-react";
+import { Eye, EyeOff, Shield } from "lucide-react";
 import { useEffect, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -84,7 +84,12 @@ const Register = () => {
       const { fullName, password, roleKey, ...rest } = data;
       const { error } = await supabase
         .from("users")
-        .insert({ ...rest, full_name: fullName, role_key: roleKey })
+        .insert({
+          ...rest,
+          full_name: fullName,
+          role_key: roleKey,
+          user_id: result.user.id,
+        })
         .single();
 
       if (error) {
@@ -223,13 +228,26 @@ const Register = () => {
                 control={form.control}
                 render={({ field }) => (
                   <FormItem>
-                    <Input
-                      id="password"
-                      type="text"
-                      placeholder="Password"
-                      {...field}
-                      className="w-full"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Password"
+                        {...field}
+                        className="w-full pr-10" // add padding-right for icon space
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-700"
+                      >
+                        {showPassword ? (
+                          <EyeOff size={18} />
+                        ) : (
+                          <Eye size={18} />
+                        )}
+                      </button>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}

@@ -1,5 +1,6 @@
 import { supabase } from "@/supabse-client";
 import { useMutation } from "@tanstack/react-query";
+import { error } from "console";
 
 export const useLogin = () => {
   return useMutation({
@@ -23,6 +24,7 @@ export const useRegister = () => {
           emailRedirectTo: `${SITE_URL}/auth/callback`,
         },
       });
+      if (res.error) throw res.error;
       return res.data;
     },
   });
