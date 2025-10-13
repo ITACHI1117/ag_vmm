@@ -1,5 +1,6 @@
 // add expense
 
+import { queryClient } from "@/config/queryclient";
 import { supabase } from "@/supabse-client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -8,6 +9,7 @@ export const useAddExpenses = () => {
   //   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data) => {
+      //   console.log(data);
       const { data: res, error } = await supabase
         .from("expenses")
         .insert(data)
@@ -18,42 +20,50 @@ export const useAddExpenses = () => {
       return res;
     },
     // Optimistic update
-    // onMutate: async (newVehicle) => {
-    //   await queryClient.cancelQueries({ queryKey: ["get-all-vehicles"] });
+    onMutate: async (newExpenses) => {
+      console.log(newExpenses);
 
-    //   const previousVehicles = queryClient.getQueriesData(["get-all-vehicles"]);
+      await queryClient.cancelQueries({
+        queryKey: ["get-vehicle-expenses", "", newExpenses.vehicle_id],
+      });
 
-    //   // Optimistically update cache
-    //   queryClient.setQueryData(["get-all-vehicles"], (old: any) => [
-    //     ...(old || []),
-    //     { ...newVehicle, id: Math.random().toString(), optimistic: true },
-    //   ]);
-    //   return { previousVehicles };
-    // },
+      const previousVehicles = queryClient.getQueriesData([
+        "get-vehicle-expenses",
+        "",
+        newExpenses.vehicle_id,
+      ]);
+
+      // Optimistically update cache
+      queryClient.setQueryData(["get-vehicle-expenses"], (old: any) => [
+        ...(old || []),
+        { ...newExpenses, id: Math.random().toString(), optimistic: true },
+      ]);
+      return { previousVehicles };
+    },
     // ❌ Rollback if there's an error
-    // onError: (err, newVehicle, context) => {
-    //   if (context?.previousVehicles) {
-    //     queryClient.setQueryData(
-    //       ["get-all-vehicles"],
-    //       context.previousVehicles
-    //     );
-    //   }
-    //   console.error("Error adding vehicle:", err.message);
-    // },
+    onError: (err, newExpenses, context) => {
+      if (context?.previousVehicles) {
+        queryClient.setQueryData(
+          ["get-vehicle-expenses", "", newExpenses.vehicle_id],
+          context.previousVehicles
+        );
+      }
+      console.error("Error adding vehicle:", err.message);
+    },
 
     // ✅ On success, replace optimistic data with actual data
-    // onSuccess: (res) => {
-    //   queryClient.setQueryData(["get-all-vehicles"], (old: any) => [
-    //     ...(old?.filter((v: any) => !v.optimistic) || []),
-    //     res,
-    //   ]);
-    //   console.log("Vehicle added successfully:", res);
-    // },
+    onSuccess: (res) => {
+      queryClient.setQueryData(["get-vehicle-expenses"], (old: any) => [
+        ...(old?.filter((v: any) => !v.optimistic) || []),
+        res,
+      ]);
+      console.log("Vehicle added successfully:", res);
+    },
 
     // // 🔄 Refetch to ensure data is fully synced
-    // onSettled: () => {
-    //   queryClient.invalidateQueries({ queryKey: ["get-all-vehicles"] });
-    // },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["get-vehicle-expenses"] });
+    },
   });
 };
 

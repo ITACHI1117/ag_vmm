@@ -10,7 +10,10 @@ import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { ArrowLeft, Download, Eye, Plus, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import AddExpenseModal from "./AddExpenseModal";
-import { useGetVehicle } from "@/queries/vehicle.queries";
+import {
+  useGetTotalAmountSpentOnVehicle,
+  useGetVehicle,
+} from "@/queries/vehicle.queries";
 import { useGetVehicleExpenses } from "@/queries/expense.queries";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Input } from "@/components/ui/input";
@@ -130,6 +133,10 @@ const VehicleDetailsComponent = ({
     vehicleId
   );
 
+  // Get Total amount Spent on Vehicle
+  const GetTotalAmountSpentOnVehicleQuery =
+    useGetTotalAmountSpentOnVehicle(vehicleId);
+
   useEffect(() => {
     if (GetVehicleExpensesQuery.isSuccess) {
       console.log(GetVehicleExpensesQuery.data);
@@ -209,8 +216,8 @@ const VehicleDetailsComponent = ({
               </p>
               <p className="text-3xl font-bold text-primary mt-1">
                 ₦
-                {GetVehicleQuery.data.total_spent
-                  ? GetVehicleQuery.data.total_spent
+                {GetTotalAmountSpentOnVehicleQuery.data
+                  ? GetTotalAmountSpentOnVehicleQuery.data.toLocaleString()
                   : "0.00"}
               </p>
             </div>

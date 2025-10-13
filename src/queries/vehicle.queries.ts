@@ -123,3 +123,19 @@ export const useGetVehicle = (vehicleId) => {
     },
   });
 };
+
+// // Get Total Amount Spent on vehicle
+// through supabse Supabase RCP (Remote Procedure Cell)
+export const useGetTotalAmountSpentOnVehicle = (vehicle_id) => {
+  return useQuery({
+    queryKey: ["total-amount-spent-on-vehicle", vehicle_id],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc(
+        "get_total_expense_for_vehicle",
+        { vehicle_id_input: vehicle_id }
+      );
+      if (error) throw error;
+      return data;
+    },
+  });
+};

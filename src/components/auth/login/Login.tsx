@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, EyeOff, Car } from "lucide-react";
 import { FormProvider, useForm } from "react-hook-form";
-import z from "zod";
 import { loginSchema } from "@/schema/auth";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -28,14 +27,11 @@ import { useLogin } from "@/queries/auth.queries";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
 import { useAuthStore } from "@/store/authStore";
-import { createClient, supabase } from "@/supabse-client";
+import { supabase } from "@/supabse-client";
 
 // Login Page Component
 export const LoginComponent = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
   const { push } = useProgressBarNavigation();
   const LoginQuery = useLogin();
   const { setUser } = useAuthStore();
@@ -69,7 +65,7 @@ export const LoginComponent = () => {
       }
       // store the user role
       setUser(UserData);
-      toast.success(`Welcome Back ${UserData.full_name}`);
+      toast.success(`Welcome back ${UserData.full_name}`);
       push("/dashboard/overview");
     } catch (error) {
       toast.error(`${error}`);
@@ -78,13 +74,6 @@ export const LoginComponent = () => {
     console.log("Login attempt:", { email, password });
     push("/dashboard/overview");
   };
-
-  // useEffect(() => {
-  //   if (LoginQuery.isSuccess) {
-  //     console.log(LoginQuery.data);
-  //     toast.success("Welcome Back");
-  //   }
-  // });
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-accent/5 p-4">
@@ -107,11 +96,11 @@ export const LoginComponent = () => {
         </CardHeader>
 
         <CardContent className="space-y-4">
-          {error && (
+          {/* {error && (
             <Alert variant="destructive">
               <AlertDescription>{error}</AlertDescription>
             </Alert>
-          )}
+          )} */}
           <FormProvider {...form}>
             <form
               onSubmit={form.handleSubmit(handleLogin)}

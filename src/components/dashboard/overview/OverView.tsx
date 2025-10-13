@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -46,6 +46,12 @@ import {
   Calendar,
 } from "lucide-react";
 import useProgressBarNavigation from "@/hooks/useProgressBarNavigator";
+import {
+  useGetMonthlyExpenses,
+  useGetTotalExpensesLoggedCurrentYear,
+  useGetTotalSpentCurrentYear,
+  useGetTotalVehicles,
+} from "@/queries/dashboard.queries";
 
 // Mock Data
 const mockVehicles = [
@@ -167,6 +173,21 @@ export const Dashboard = () => {
   const totalExpenses = mockExpenses.length;
   const { push } = useProgressBarNavigation();
 
+  // Try combine these three queries to one
+  // supabse function to return these values
+  const GetTotalVehiclesQuery = useGetTotalVehicles();
+  const GetTotalTotalSpentCurrentYearQuery = useGetTotalSpentCurrentYear();
+  const useGetTotalExpensesLoggedCurrentYearQuery =
+    useGetTotalExpensesLoggedCurrentYear();
+
+  const GetMonthlyExpenses = useGetMonthlyExpenses();
+
+  useEffect(() => {
+    if (GetMonthlyExpenses.isSuccess) {
+      console.log(GetMonthlyExpenses.data);
+    }
+  }, [GetMonthlyExpenses.isSuccess]);
+
   return (
     <div className="min-h-screen bg-background p-4 md:p-6 lg:p-8 w-full ">
       <div className="space-y-6">
@@ -197,7 +218,9 @@ export const Dashboard = () => {
               <Car className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{totalVehicles}</div>
+              <div className="text-2xl font-bold">
+                {GetTotalVehiclesQuery.data ? GetTotalVehiclesQuery.data : "0"}
+              </div>
               <p className="text-xs text-muted-foreground mt-1">
                 Active fleet vehicles
               </p>
@@ -213,7 +236,10 @@ export const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                ₦{totalSpent.toLocaleString()}
+                ₦
+                {GetTotalTotalSpentCurrentYearQuery.data
+                  ? GetTotalTotalSpentCurrentYearQuery.data.toLocaleString()
+                  : "0"}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 <span className="text-green-600 font-medium">+12.5%</span> from
@@ -230,7 +256,11 @@ export const Dashboard = () => {
               <FileText className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{totalExpenses}</div>
+              <div className="text-2xl font-bold">
+                {useGetTotalExpensesLoggedCurrentYearQuery.data
+                  ? useGetTotalExpensesLoggedCurrentYearQuery.data
+                  : "0"}
+              </div>
               <p className="text-xs text-muted-foreground mt-1">
                 Logged this year
               </p>
@@ -239,7 +269,7 @@ export const Dashboard = () => {
         </div>
 
         {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
           <Card>
             <CardHeader>
               <CardTitle>Monthly Spending</CardTitle>
@@ -249,7 +279,7 @@ export const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={monthlySpending}>
+                <LineChart data={GetMonthlyExpenses.data}>
                   <CartesianGrid
                     strokeDasharray="3 3"
                     stroke="hsl(var(--border))"
@@ -268,16 +298,16 @@ export const Dashboard = () => {
                   />
                   <Line
                     type="monotone"
-                    dataKey="amount"
-                    stroke="hsl(var(--primary))"
+                    dataKey="total_amount"
+                    stroke="blue"
                     strokeWidth={2}
                   />
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
-
-          <Card>
+          {/* Removed the spending types for now */}
+          {/* <Card>
             <CardHeader>
               <CardTitle>Spending by Type</CardTitle>
               <CardDescription>
@@ -307,7 +337,7 @@ export const Dashboard = () => {
                 </PieChart>
               </ResponsiveContainer>
             </CardContent>
-          </Card>
+          </Card> */}
         </div>
 
         {/* Recent Expenses */}
