@@ -67,7 +67,7 @@ export const HeaderNavigation = () => {
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-64 p-0">
-              <Sidebar />
+              <Sidebar setIsOpen={setIsOpen} />
             </SheetContent>
           </Sheet>
 

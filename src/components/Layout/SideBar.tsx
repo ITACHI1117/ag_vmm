@@ -16,7 +16,11 @@ import { useAuthStore } from "@/store/authStore";
 import { useEffect } from "react";
 import { Badge } from "../ui/badge";
 
-export const Sidebar = () => {
+export const Sidebar = ({
+  setIsOpen,
+}: {
+  setIsOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+}) => {
   const pathname = usePathname();
   const { push } = useProgressBarNavigation();
   const { user } = useAuthStore();
@@ -108,7 +112,10 @@ export const Sidebar = () => {
                   ? "bg-primary text-primary-foreground hover:bg-primary/90"
                   : "hover:bg-accent"
               )}
-              onClick={() => push(item.href)}
+              onClick={() => {
+                setIsOpen && setIsOpen(false);
+                push(item.href);
+              }}
             >
               <Icon className="h-5 w-5" />
               <span className="font-medium">{item.title}</span>

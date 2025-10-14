@@ -18,18 +18,13 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import useProgressBarNavigation from "@/hooks/useProgressBarNavigator";
 import { useRegister } from "@/queries/auth.queries";
+import {
+  useGetActiveKey,
+  useUpdateRoleKey,
+} from "@/queries/keyGenerator.queries";
 import { registerSchema } from "@/schema/auth";
 import { supabase } from "@/supabse-client";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -52,6 +47,25 @@ const Register = () => {
 
   // sign up query
   const RegisterQuery = useRegister();
+  // get active role key
+  const GetActiveKey = useGetActiveKey();
+  // update role key query
+  const UpdateRoleKeyQuery = useUpdateRoleKey();
+
+  useEffect(() => {
+    if (GetActiveKey.isSuccess) {
+      console.log(GetActiveKey.data);
+    }
+  }, [GetActiveKey.isSuccess]);
+
+  // useEffect(() => {
+  //   if (GetActiveKey.isSuccess) {
+  //     UpdateRoleKeyQuery.mutateAsync({
+  //       status: "used",
+  //       role_key: GetActiveKey.data[0].role_key,
+  //     });
+  //   }
+  // }, [GetActiveKey.isSuccess]);
 
   const form = useForm({
     resolver: zodResolver(registerSchema),
@@ -64,49 +78,95 @@ const Register = () => {
     },
   });
 
+  // validate role key
+  function ValidateRoleKey(key) {
+    // fetch role key
+    if (GetActiveKey.data && GetActiveKey.data.length == 0) {
+      return false;
+    }
+    console.log(GetActiveKey.data);
+    if (GetActiveKey.data && GetActiveKey.data[0].role_key === key) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   const handleRegister = async (data) => {
-    console.log(data);
+    console.log("Registration data:", data);
+
+    // Step 1: Validate role key
+    const isValidKey = ValidateRoleKey(data.roleKey);
+    if (!isValidKey) {
+      toast.error("Invalid role key");
+      return;
+    }
+
     try {
+      // Step 2: Register the user in Supabase Auth
       const promise = RegisterQuery.mutateAsync({
         email: data.email,
         password: data.password,
       });
 
       toast.promise(promise, {
-        loading: "Signing In",
+        loading: "Creating your account...",
+        error: "Failed to create account.",
       });
 
-      // await supabase auth sign up to complete
       const result = await promise;
       console.log(result);
+      const userId = result?.user?.id;
+      console.log(userId);
 
-      // once mutation succeeds, insert the rest of the data in Supabase users table
+      // Step 3: Stop immediately if no userId
+      if (result?.user?.identities?.length == 0) {
+        toast.error("User already exist");
+        // console.error("Supabase did not return a valid user ID:", result);
+        return;
+      }
+
+      // Step 4: Insert user record in your 'users' table
       const { fullName, password, roleKey, ...rest } = data;
-      const { error } = await supabase
+      const { error: insertError } = await supabase
         .from("users")
         .insert({
           ...rest,
           full_name: fullName,
           role_key: roleKey,
-          user_id: result.user.id,
+          role: GetActiveKey?.data?.[0]?.role_type?.name ?? null,
+          user_id: userId,
         })
         .single();
 
-      if (error) {
-        // dosent work yet FIX JOSEPH
-        await supabase.auth.admin.deleteUser(result.user.id);
-        toast.error("User record creation failed, rolled back.");
+      if (insertError) {
+        console.error("User insert failed:", insertError);
+        toast.error("Something went wrong while saving your details.");
         return;
       }
 
       toast.success(
-        "Sign Up Successfully, Check your mail for your verification code."
+        "Sign Up Successful! Check your email for verification instructions."
       );
-      console.log("Registration attempt:", data);
+      // Step 5: Update role key status
+      try {
+        await UpdateRoleKeyQuery.mutateAsync({
+          status: "used",
+          role_key: GetActiveKey?.data?.[0]?.role_key,
+        });
+      } catch (updateError) {
+        console.error("Failed to update role key:", updateError);
+        toast.error("User created, but failed to update role key.");
+      }
+
+      // Step 6: Done
+      toast.success("Redirecting to login");
       push("/auth/login");
     } catch (error) {
-      toast.error("An error occurred during registration");
-      console.error(error);
+      console.error("Registration error:", error);
+      toast.error(
+        error.message || "An unexpected error occurred during registration."
+      );
     }
   };
 
@@ -150,6 +210,7 @@ const Register = () => {
                 control={form.control}
                 render={({ field }) => (
                   <FormItem>
+                    <FormLabel>Full Name</FormLabel>
                     <Input
                       id="fullName"
                       type="text"
@@ -166,6 +227,7 @@ const Register = () => {
                 control={form.control}
                 render={({ field }) => (
                   <FormItem>
+                    <FormLabel>Email</FormLabel>
                     <Input
                       id="email"
                       type="email"
@@ -177,11 +239,13 @@ const Register = () => {
                   </FormItem>
                 )}
               />
-              <FormField
+              {/* removed the role select field this is now detrmined by the IT Admin */}
+              {/* <FormField
                 control={form.control}
                 name="role"
                 render={({ field }) => (
                   <FormItem>
+                    
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
@@ -206,19 +270,23 @@ const Register = () => {
                     <FormMessage />
                   </FormItem>
                 )}
-              />
+              /> */}
               <FormField
                 name="roleKey"
                 control={form.control}
                 render={({ field }) => (
                   <FormItem>
+                    <FormLabel>Role Key</FormLabel>
                     <Input
                       id="roleKey"
                       type="text"
-                      placeholder="role Key"
+                      placeholder="uuid"
                       {...field}
                       className="w-full"
                     />
+                    <FormDescription>
+                      Your role key is a unique ID generated by the IT Admin
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -228,6 +296,7 @@ const Register = () => {
                 control={form.control}
                 render={({ field }) => (
                   <FormItem>
+                    <FormLabel>Password</FormLabel>
                     <div className="relative">
                       <Input
                         id="password"

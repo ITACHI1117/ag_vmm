@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/tooltip";
 import {
   useGetActiveKey,
+  useUpdateRoleKey,
   useUploadKey,
   usGetRoles,
 } from "@/queries/keyGenerator.queries";

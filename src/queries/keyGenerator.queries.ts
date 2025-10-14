@@ -9,7 +9,15 @@ export const useGetActiveKey = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("role_keys")
-        .select()
+        .select(
+          `
+            id,
+            role_type_id,
+            role_type(name,id),
+            role_key,
+            status
+            `
+        )
         .eq("status", "active");
       if (error) throw error;
       return data;
@@ -43,38 +51,19 @@ export const useUploadKey = () => {
       if (error) throw error;
       return data;
     },
-    // onMutate: async (newKey) => {
-    //   await queryClient.cancelQueries({
-    //     queryKey: ["get-active-key"],
-    //   });
+  });
+};
 
-    //   const previousKey = queryClient.getQueriesData(["get-active-key"]);
-
-    //   //
-    //   // Optimistically update cache
-    //   queryClient.setQueryData(["get-active-key"], (old: any) => [
-    //     ...(old || []),
-    //     { ...newKey, id: Math.random().toString(), optimistic: true },
-    //   ]);
-    //   return { previousKey };
-    // },
-    // onError: (err, newKey, context) => {
-    //   if (context?.previousKey) {
-    //     queryClient.setQueryData(["get-active-key"], context.previousKey);
-    //   }
-    // },
-
-    // // ✅ On success, replace optimistic data with actual data
-    // onSuccess: (res) => {
-    //   queryClient.setQueryData(["get-active-key"], (old: any) => [
-    //     ...(old?.filter((v: any) => !v.optimistic) || []),
-    //     res,
-    //   ]);
-    // },
-
-    // // // 🔄 Refetch to ensure data is fully synced
-    // onSettled: () => {
-    //   queryClient.invalidateQueries({ queryKey: ["get-active-key"] });
-    // },
+// Update role key status
+export const useUpdateRoleKey = () => {
+  return useMutation({
+    mutationFn: async ({ status, role_key }) => {
+      const { data, error } = await supabase
+        .from("role_keys")
+        .update({ status: status })
+        .eq("role_key", role_key);
+      if (error) throw error;
+      return data;
+    },
   });
 };
