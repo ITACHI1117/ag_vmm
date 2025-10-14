@@ -49,9 +49,11 @@ import { cn } from "@/lib/utils";
 const AddComplianceModal = ({
   vehicleId,
   onClose,
+  setWarnDialog,
 }: {
   vehicleId?: number;
   onClose: () => void;
+  setWarnDialog: () => void;
 }) => {
   // Queries
   // add compliance query
@@ -102,6 +104,7 @@ const AddComplianceModal = ({
   }, []);
   useEffect(() => {
     if (GetComplianceByVehicleId.isSuccess) {
+      // setWarnDialog(true);
       console.log(GetComplianceByVehicleId.data);
     }
   }, [GetComplianceByVehicleId.isSuccess]);

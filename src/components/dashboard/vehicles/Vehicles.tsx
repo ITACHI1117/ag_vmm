@@ -3,40 +3,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import useProgressBarNavigation from "@/hooks/useProgressBarNavigator";
-import { ArrowLeft, Plus, Search } from "lucide-react";
+import { ArrowLeft, Plus, Search, AlertCircle, RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AddVehicleModal } from "./AddVechileModal";
 import VehicleDetailsComponent from "./VehiclesDetailsComponent";
 import { useGetAllVehicles } from "@/queries/vehicle.queries";
 import { useDebounce } from "@/hooks/useDebounce";
-
-const mockVehicles = [
-  // {
-  //   id: 1,
-  //   plateNumber: "ABC-1234",
-  //   make: "Toyota",
-  //   model: "Corolla",
-  //   year: 2020,
-  //   totalSpent: 125000,
-  // },
-  // {
-  //   id: 2,
-  //   plateNumber: "XYZ-5678",
-  //   make: "Honda",
-  //   model: "Accord",
-  //   year: 2019,
-  //   totalSpent: 98500,
-  // },
-  // {
-  //   id: 3,
-  //   plateNumber: "DEF-9012",
-  //   make: "Ford",
-  //   model: "Explorer",
-  //   year: 2021,
-  //   totalSpent: 156000,
-  // },
-];
 
 export const VehiclesComponent = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -63,10 +38,11 @@ export const VehiclesComponent = () => {
     }
   };
 
-  if (GetAllVehiclesQuery.isPending) {
-    return <h1>Loading...</h1>;
-  }
+  const handleRetry = () => {
+    GetAllVehiclesQuery.refetch();
+  };
 
+  // Show vehicle details screen
   if (currentScreen == "VehicleDetail") {
     return (
       <VehicleDetailsComponent
@@ -82,14 +58,6 @@ export const VehiclesComponent = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            {/* <Button
-              variant="ghost"
-              onClick={() => back()}
-              className="mb-2 -ml-3"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Dashboard
-            </Button> */}
             <h1 className="text-3xl font-bold">Vehicles</h1>
             <p className="text-muted-foreground mt-1">
               Manage your fleet vehicles
@@ -106,9 +74,29 @@ export const VehiclesComponent = () => {
           </Dialog>
         </div>
 
+        {/* Error Alert */}
+        {GetAllVehiclesQuery.isError && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error Loading Vehicles</AlertTitle>
+            <AlertDescription className="flex items-center justify-between">
+              <span>
+                There was a problem loading the vehicles. Please try again.
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRetry}
+                className="ml-4"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Retry
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Search */}
-        {/* <Card>
-          <CardContent className="pt-6"> */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -116,10 +104,9 @@ export const VehiclesComponent = () => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
+            disabled={GetAllVehiclesQuery.isLoading}
           />
         </div>
-        {/* </CardContent>
-        </Card> */}
 
         {/* Vehicles Table */}
         <Card>
@@ -152,47 +139,119 @@ export const VehiclesComponent = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {GetAllVehiclesQuery.data &&
-                  GetAllVehiclesQuery.data.length > 0
-                    ? GetAllVehiclesQuery.data.map((vehicle) => (
-                        <tr
-                          key={vehicle.id}
-                          className="border-b border-border hover:bg-accent/50 transition-colors cursor-pointer"
-                          onClick={() => {
-                            setVehicleId(vehicle.id);
-                            handleNavigation();
-                          }}
-                        >
-                          <td className="py-4 px-6 font-medium">
-                            {vehicle.plate_number}
-                          </td>
-                          <td className="py-4 px-6">{vehicle.make}</td>
-                          <td className="py-4 px-6">{vehicle.model}</td>
-                          <td className="py-4 px-6">{vehicle.year}</td>
-                          <td className="py-4 px-6">
-                            {vehicle.users.full_name}
-                          </td>
-                          <td className="py-4 px-6 font-medium">
-                            ₦
-                            {vehicle.total_spent
-                              ? vehicle.total_spent.toLocaleString()
-                              : "0.00"}
-                          </td>
-                          <td className="py-4 px-6">
+                  {GetAllVehiclesQuery.isLoading ? (
+                    // Skeleton rows
+                    [...Array(5)].map((_, index) => (
+                      <tr key={index} className="border-b border-border">
+                        <td className="py-4 px-6">
+                          <Skeleton className="h-5 w-24" />
+                        </td>
+                        <td className="py-4 px-6">
+                          <Skeleton className="h-5 w-20" />
+                        </td>
+                        <td className="py-4 px-6">
+                          <Skeleton className="h-5 w-24" />
+                        </td>
+                        <td className="py-4 px-6">
+                          <Skeleton className="h-5 w-16" />
+                        </td>
+                        <td className="py-4 px-6">
+                          <Skeleton className="h-5 w-28" />
+                        </td>
+                        <td className="py-4 px-6">
+                          <Skeleton className="h-5 w-24" />
+                        </td>
+                        <td className="py-4 px-6">
+                          <Skeleton className="h-8 w-24" />
+                        </td>
+                      </tr>
+                    ))
+                  ) : GetAllVehiclesQuery.isError ? (
+                    // Error state
+                    <tr>
+                      <td colSpan={7} className="py-12">
+                        <div className="flex flex-col items-center justify-center text-center">
+                          <AlertCircle className="h-12 w-12 text-destructive mb-4" />
+                          <p className="text-sm text-muted-foreground mb-4">
+                            Failed to load vehicles
+                          </p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleRetry}
+                          >
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                            Retry
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : !GetAllVehiclesQuery.data ||
+                    GetAllVehiclesQuery.data.length === 0 ? (
+                    // Empty state
+                    <tr>
+                      <td colSpan={7} className="py-12 text-center">
+                        <div className="flex flex-col items-center justify-center">
+                          <p className="text-sm text-muted-foreground mb-2">
+                            {searchTerm
+                              ? "No vehicles found matching your search"
+                              : "No vehicles found"}
+                          </p>
+                          {searchTerm && (
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleNavigation();
-                              }}
+                              onClick={() => setSearchTerm("")}
+                              className="mt-2"
                             >
-                              View Details
+                              Clear search
                             </Button>
-                          </td>
-                        </tr>
-                      ))
-                    : "No Vehicles Found"}
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    // Data rows
+                    GetAllVehiclesQuery.data.map((vehicle) => (
+                      <tr
+                        key={vehicle.id}
+                        className="border-b border-border hover:bg-accent/50 transition-colors cursor-pointer"
+                        onClick={() => {
+                          setVehicleId(vehicle.id);
+                          handleNavigation();
+                        }}
+                      >
+                        <td className="py-4 px-6 font-medium">
+                          {vehicle.plate_number}
+                        </td>
+                        <td className="py-4 px-6">{vehicle.make}</td>
+                        <td className="py-4 px-6">{vehicle.model}</td>
+                        <td className="py-4 px-6">{vehicle.year}</td>
+                        <td className="py-4 px-6">
+                          {vehicle.users?.full_name || "N/A"}
+                        </td>
+                        <td className="py-4 px-6 font-medium">
+                          ₦
+                          {vehicle.total_spent
+                            ? vehicle.total_spent.toLocaleString()
+                            : "0.00"}
+                        </td>
+                        <td className="py-4 px-6">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setVehicleId(vehicle.id);
+                              handleNavigation();
+                            }}
+                          >
+                            View Details
+                          </Button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>

@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -7,21 +7,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  BarChart,
-  Bar,
   LineChart,
   Line,
   XAxis,
@@ -29,22 +16,8 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
 } from "recharts";
-import {
-  Car,
-  DollarSign,
-  FileText,
-  Plus,
-  Search,
-  Download,
-  Eye,
-  ArrowLeft,
-  TrendingUp,
-  Calendar,
-} from "lucide-react";
+import { Car, DollarSign, FileText } from "lucide-react";
 import useProgressBarNavigation from "@/hooks/useProgressBarNavigator";
 import {
   useGetMonthlyExpenses,
@@ -54,114 +27,41 @@ import {
 } from "@/queries/dashboard.queries";
 import { useGetFewExpenses } from "@/queries/expense.queries";
 import { format } from "date-fns";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle, RefreshCw } from "lucide-react";
 
-// Mock Data
-const mockVehicles = [
-  {
-    id: 1,
-    plateNumber: "ABC-1234",
-    make: "Toyota",
-    model: "Corolla",
-    year: 2020,
-    totalSpent: 125000,
-  },
-  {
-    id: 2,
-    plateNumber: "XYZ-5678",
-    make: "Honda",
-    model: "Accord",
-    year: 2019,
-    totalSpent: 98500,
-  },
-  {
-    id: 3,
-    plateNumber: "DEF-9012",
-    make: "Ford",
-    model: "Explorer",
-    year: 2021,
-    totalSpent: 156000,
-  },
-  {
-    id: 4,
-    plateNumber: "GHI-3456",
-    make: "Nissan",
-    model: "Altima",
-    year: 2020,
-    totalSpent: 87300,
-  },
-  {
-    id: 5,
-    plateNumber: "JKL-7890",
-    make: "Chevrolet",
-    model: "Malibu",
-    year: 2022,
-    totalSpent: 62000,
-  },
-];
-
-const mockExpenses = [
-  {
-    id: 1,
-    vehicleId: 1,
-    date: "2025-10-05",
-    type: "Oil Change",
-    amount: 15000,
-    description: "Regular maintenance",
-    invoice: "INV-001",
-  },
-  {
-    id: 2,
-    vehicleId: 2,
-    date: "2025-10-03",
-    type: "Tire Replacement",
-    amount: 45000,
-    description: "All 4 tires replaced",
-    invoice: "INV-002",
-  },
-  {
-    id: 3,
-    vehicleId: 1,
-    date: "2025-09-28",
-    type: "Brake Service",
-    amount: 32000,
-    description: "Front brake pads",
-    invoice: "INV-003",
-  },
-  {
-    id: 4,
-    vehicleId: 3,
-    date: "2025-09-25",
-    type: "Engine Repair",
-    amount: 85000,
-    description: "Engine diagnostic and repair",
-    invoice: "INV-004",
-  },
-  {
-    id: 5,
-    vehicleId: 4,
-    date: "2025-09-20",
-    type: "Battery Replacement",
-    amount: 18000,
-    description: "New battery installed",
-    invoice: "INV-005",
-  },
-];
-
-// Dashboard Component
 export const Dashboard = () => {
   const { push } = useProgressBarNavigation();
 
-  // Try combine these three queries to one
-  // supabse function to return these values
   const GetTotalVehiclesQuery = useGetTotalVehicles();
   const GetTotalTotalSpentCurrentYearQuery = useGetTotalSpentCurrentYear();
   const useGetTotalExpensesLoggedCurrentYearQuery =
     useGetTotalExpensesLoggedCurrentYear();
-
   const GetMonthlyExpenses = useGetMonthlyExpenses();
-
-  // get recent expenses
   const GetFewExpenses = useGetFewExpenses();
+
+  const isLoading =
+    GetTotalVehiclesQuery.isLoading ||
+    GetTotalTotalSpentCurrentYearQuery.isLoading ||
+    useGetTotalExpensesLoggedCurrentYearQuery.isLoading ||
+    GetMonthlyExpenses.isLoading ||
+    GetFewExpenses.isLoading;
+
+  const hasError =
+    GetTotalVehiclesQuery.isError ||
+    GetTotalTotalSpentCurrentYearQuery.isError ||
+    useGetTotalExpensesLoggedCurrentYearQuery.isError ||
+    GetMonthlyExpenses.isError ||
+    GetFewExpenses.isError;
+
+  const handleRetry = () => {
+    GetTotalVehiclesQuery.refetch();
+    GetTotalTotalSpentCurrentYearQuery.refetch();
+    useGetTotalExpensesLoggedCurrentYearQuery.refetch();
+    GetMonthlyExpenses.refetch();
+    GetFewExpenses.refetch();
+  };
 
   useEffect(() => {
     if (GetFewExpenses.isSuccess) {
@@ -189,6 +89,29 @@ export const Dashboard = () => {
           </Button>
         </div>
 
+        {/* Global Error Alert */}
+        {hasError && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error Loading Dashboard</AlertTitle>
+            <AlertDescription className="flex items-center justify-between">
+              <span>
+                There was a problem loading some dashboard data. Please try
+                again.
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRetry}
+                className="ml-4"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Retry
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
@@ -199,12 +122,25 @@ export const Dashboard = () => {
               <Car className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {GetTotalVehiclesQuery.data ? GetTotalVehiclesQuery.data : "0"}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Active fleet vehicles
-              </p>
+              {GetTotalVehiclesQuery.isLoading ? (
+                <>
+                  <Skeleton className="h-8 w-16 mb-2" />
+                  <Skeleton className="h-4 w-32" />
+                </>
+              ) : GetTotalVehiclesQuery.isError ? (
+                <div className="text-sm text-destructive">Failed to load</div>
+              ) : (
+                <>
+                  <div className="text-2xl font-bold">
+                    {GetTotalVehiclesQuery.data
+                      ? GetTotalVehiclesQuery.data
+                      : "0"}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Active fleet vehicles
+                  </p>
+                </>
+              )}
             </CardContent>
           </Card>
 
@@ -216,16 +152,27 @@ export const Dashboard = () => {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                ₦
-                {GetTotalTotalSpentCurrentYearQuery.data
-                  ? GetTotalTotalSpentCurrentYearQuery.data.toLocaleString()
-                  : "0"}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                <span className="text-green-600 font-medium">+12.5%</span> from
-                last year
-              </p>
+              {GetTotalTotalSpentCurrentYearQuery.isLoading ? (
+                <>
+                  <Skeleton className="h-8 w-24 mb-2" />
+                  <Skeleton className="h-4 w-36" />
+                </>
+              ) : GetTotalTotalSpentCurrentYearQuery.isError ? (
+                <div className="text-sm text-destructive">Failed to load</div>
+              ) : (
+                <>
+                  <div className="text-2xl font-bold">
+                    ₦
+                    {GetTotalTotalSpentCurrentYearQuery.data
+                      ? GetTotalTotalSpentCurrentYearQuery.data.toLocaleString()
+                      : "0"}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    <span className="text-green-600 font-medium">+12.5%</span>{" "}
+                    from last year
+                  </p>
+                </>
+              )}
             </CardContent>
           </Card>
 
@@ -237,14 +184,25 @@ export const Dashboard = () => {
               <FileText className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {useGetTotalExpensesLoggedCurrentYearQuery.data
-                  ? useGetTotalExpensesLoggedCurrentYearQuery.data
-                  : "0"}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Logged this year
-              </p>
+              {useGetTotalExpensesLoggedCurrentYearQuery.isLoading ? (
+                <>
+                  <Skeleton className="h-8 w-16 mb-2" />
+                  <Skeleton className="h-4 w-28" />
+                </>
+              ) : useGetTotalExpensesLoggedCurrentYearQuery.isError ? (
+                <div className="text-sm text-destructive">Failed to load</div>
+              ) : (
+                <>
+                  <div className="text-2xl font-bold">
+                    {useGetTotalExpensesLoggedCurrentYearQuery.data
+                      ? useGetTotalExpensesLoggedCurrentYearQuery.data
+                      : "0"}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Logged this year
+                  </p>
+                </>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -259,66 +217,62 @@ export const Dashboard = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={GetMonthlyExpenses.data}>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="hsl(var(--border))"
-                  />
-                  <XAxis
-                    dataKey="month"
-                    stroke="hsl(var(--muted-foreground))"
-                  />
-                  <YAxis stroke="hsl(var(--muted-foreground))" />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px",
-                    }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="total_amount"
-                    stroke="blue"
-                    strokeWidth={2}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              {GetMonthlyExpenses.isLoading ? (
+                <div className="space-y-3">
+                  <Skeleton className="h-[300px] w-full" />
+                </div>
+              ) : GetMonthlyExpenses.isError ? (
+                <div className="flex flex-col items-center justify-center h-[300px] text-center">
+                  <AlertCircle className="h-12 w-12 text-destructive mb-4" />
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Failed to load monthly spending data
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => GetMonthlyExpenses.refetch()}
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Retry
+                  </Button>
+                </div>
+              ) : !GetMonthlyExpenses.data ||
+                GetMonthlyExpenses.data.length === 0 ? (
+                <div className="flex items-center justify-center h-[300px] text-center">
+                  <p className="text-sm text-muted-foreground">
+                    No spending data available
+                  </p>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={GetMonthlyExpenses.data}>
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="hsl(var(--border))"
+                    />
+                    <XAxis
+                      dataKey="month"
+                      stroke="hsl(var(--muted-foreground))"
+                    />
+                    <YAxis stroke="hsl(var(--muted-foreground))" />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "8px",
+                      }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="total_amount"
+                      stroke="blue"
+                      strokeWidth={2}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
             </CardContent>
           </Card>
-          {/* Removed the spending types for now */}
-          {/* <Card>
-            <CardHeader>
-              <CardTitle>Spending by Type</CardTitle>
-              <CardDescription>
-                Breakdown of maintenance categories
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={expenseTypeData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) =>
-                      `${name} ${(percent * 100).toFixed(0)}%`
-                    }
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {expenseTypeData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card> */}
         </div>
 
         {/* Recent Expenses */}
@@ -344,45 +298,76 @@ export const Dashboard = () => {
                     <th className="text-left py-3 px-4 font-medium text-sm">
                       Amount
                     </th>
-                    {/* <th className="text-left py-3 px-4 font-medium text-sm">
-                      Invoice
-                    </th> */}
                   </tr>
                 </thead>
                 <tbody>
-                  {GetFewExpenses.data &&
-                    GetFewExpenses.data.map((expense) => {
-                      // const vehicle = mockVehicles.find(
-                      //   (v) => v.id === expense.vehicleId
-                      // );
-                      return (
-                        <tr
-                          key={expense.id}
-                          className="border-b border-border hover:bg-accent/50 transition-colors"
-                        >
-                          <td className="py-3 px-4 text-sm">
-                            {format(
-                              new Date(expense.created_at),
-                              "MMM dd, yyyy"
-                            )}
-                          </td>
-                          <td className="py-3 px-4 text-sm">
-                            {expense.vehicles?.plate_number}
-                          </td>
-                          <td className="py-3 px-4 text-sm">
-                            {expense.expense_type}
-                          </td>
-                          <td className="py-3 px-4 text-sm font-medium">
-                            ₦{expense.amount.toLocaleString()}
-                          </td>
-                          {/* <td className="py-3 px-4 text-sm">
-                            <Button variant="ghost" size="sm">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </td> */}
-                        </tr>
-                      );
-                    })}
+                  {GetFewExpenses.isLoading ? (
+                    // Skeleton rows
+                    [...Array(5)].map((_, index) => (
+                      <tr key={index} className="border-b border-border">
+                        <td className="py-3 px-4">
+                          <Skeleton className="h-5 w-24" />
+                        </td>
+                        <td className="py-3 px-4">
+                          <Skeleton className="h-5 w-32" />
+                        </td>
+                        <td className="py-3 px-4">
+                          <Skeleton className="h-5 w-28" />
+                        </td>
+                        <td className="py-3 px-4">
+                          <Skeleton className="h-5 w-20" />
+                        </td>
+                      </tr>
+                    ))
+                  ) : GetFewExpenses.isError ? (
+                    <tr>
+                      <td colSpan={4} className="py-8">
+                        <div className="flex flex-col items-center justify-center text-center">
+                          <AlertCircle className="h-10 w-10 text-destructive mb-3" />
+                          <p className="text-sm text-muted-foreground mb-3">
+                            Failed to load recent expenses
+                          </p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => GetFewExpenses.refetch()}
+                          >
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                            Retry
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : !GetFewExpenses.data ||
+                    GetFewExpenses.data.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="py-8 text-center">
+                        <p className="text-sm text-muted-foreground">
+                          No recent expenses found
+                        </p>
+                      </td>
+                    </tr>
+                  ) : (
+                    GetFewExpenses.data.map((expense) => (
+                      <tr
+                        key={expense.id}
+                        className="border-b border-border hover:bg-accent/50 transition-colors"
+                      >
+                        <td className="py-3 px-4 text-sm">
+                          {format(new Date(expense.created_at), "MMM dd, yyyy")}
+                        </td>
+                        <td className="py-3 px-4 text-sm">
+                          {expense.vehicles?.plate_number}
+                        </td>
+                        <td className="py-3 px-4 text-sm">
+                          {expense.expense_type}
+                        </td>
+                        <td className="py-3 px-4 text-sm font-medium">
+                          ₦{expense.amount.toLocaleString()}
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>

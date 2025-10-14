@@ -2,15 +2,25 @@
 import { format } from "date-fns";
 import { DocumentThumbnail } from "./DocumentThumbnail";
 import { DocumentViewerDialog } from "./DocumentViewer";
-import { AlertCircle, Calendar, FileCheck } from "lucide-react";
+import { AlertCircle, Calendar, FileCheck, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 
-// Compliance Card Component
-export const ComplianceCard = ({ compliance }: { compliance: any }) => {
+// Compliance Card Component with Error Handling
+export const ComplianceCard = ({
+  compliance,
+  isLoading = false,
+  hasError = false,
+}: {
+  compliance: any;
+  isLoading?: boolean;
+  hasError?: boolean;
+}) => {
   const [selectedDocument, setSelectedDocument] = useState<any>(null);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
+  const [imageError, setImageError] = useState<{ [key: string]: boolean }>({});
 
   const handleDocumentClick = (document: any) => {
     setSelectedDocument(document);
@@ -42,6 +52,62 @@ export const ComplianceCard = ({ compliance }: { compliance: any }) => {
     }
   };
 
+  const handleImageError = (documentId: string) => {
+    setImageError((prev) => ({ ...prev, [documentId]: true }));
+  };
+
+  // Loading skeleton
+  if (isLoading) {
+    return (
+      <Card className="overflow-hidden">
+        <CardHeader className="pb-3">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <Skeleton className="h-6 w-20" />
+                <Skeleton className="h-5 w-24" />
+              </div>
+              <Skeleton className="h-6 w-32" />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            {[...Array(4)].map((_, index) => (
+              <div key={index}>
+                <Skeleton className="h-3 w-20 mb-2" />
+                <Skeleton className="h-4 w-24" />
+              </div>
+            ))}
+          </div>
+          <div>
+            <Skeleton className="h-4 w-28 mb-2" />
+            <div className="flex gap-2">
+              <Skeleton className="h-20 w-20" />
+              <Skeleton className="h-20 w-20" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Error state
+  if (hasError || !compliance) {
+    return (
+      <Card className="overflow-hidden">
+        <CardContent className="py-12">
+          <div className="flex flex-col items-center justify-center text-center">
+            <AlertCircle className="h-10 w-10 text-destructive mb-3" />
+            <p className="text-sm text-muted-foreground">
+              Failed to load compliance data
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <>
       <Card className="overflow-hidden hover:shadow-lg transition-shadow">
@@ -50,7 +116,7 @@ export const ComplianceCard = ({ compliance }: { compliance: any }) => {
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
                 <div className="font-mono text-sm font-bold px-2 py-1 bg-primary/10 text-primary rounded">
-                  {compliance.vehicles.plate_number}
+                  {compliance.vehicles?.plate_number || "N/A"}
                 </div>
                 <Badge
                   variant="outline"
@@ -59,11 +125,11 @@ export const ComplianceCard = ({ compliance }: { compliance: any }) => {
                   )} flex items-center gap-1`}
                 >
                   {getStatusIcon(compliance.status)}
-                  {compliance.status.replace("_", " ")}
+                  {compliance.status?.replace("_", " ") || "Unknown"}
                 </Badge>
               </div>
               <CardTitle className="text-lg">
-                {compliance.compliance_types.name}
+                {compliance.compliance_types?.name || "Unknown Type"}
               </CardTitle>
             </div>
           </div>
@@ -76,7 +142,7 @@ export const ComplianceCard = ({ compliance }: { compliance: any }) => {
               <p className="text-muted-foreground text-xs mb-1">
                 Document Number
               </p>
-              <p className="font-medium">{compliance.document_number}</p>
+              <p className="font-medium">{compliance.document_number || "—"}</p>
             </div>
             <div>
               <p className="text-muted-foreground text-xs mb-1">Issue Date</p>
@@ -107,20 +173,36 @@ export const ComplianceCard = ({ compliance }: { compliance: any }) => {
           </div>
 
           {/* Documents Horizontal Scroll */}
-          {compliance.compliance_files.length > 0 && (
+          {compliance.compliance_files &&
+          compliance.compliance_files.length > 0 ? (
             <div>
               <p className="text-sm font-medium mb-2">
                 Documents ({compliance.compliance_files.length})
               </p>
               <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
                 {compliance.compliance_files.map((document: any) => (
-                  <DocumentThumbnail
-                    key={document.id}
-                    document={document}
-                    onClick={() => handleDocumentClick(document)}
-                  />
+                  <div key={document.id} className="relative">
+                    {imageError[document.id] ? (
+                      <div className="flex flex-col items-center justify-center h-20 w-20 border border-border rounded bg-muted text-muted-foreground text-xs">
+                        <AlertTriangle className="h-4 w-4 mb-1" />
+                        <span className="text-[10px]">Load error</span>
+                      </div>
+                    ) : (
+                      <DocumentThumbnail
+                        document={document}
+                        onClick={() => handleDocumentClick(document)}
+                        onError={() => handleImageError(document.id)}
+                      />
+                    )}
+                  </div>
                 ))}
               </div>
+            </div>
+          ) : (
+            <div className="text-center py-4">
+              <p className="text-xs text-muted-foreground">
+                No documents attached
+              </p>
             </div>
           )}
         </CardContent>
@@ -135,7 +217,7 @@ export const ComplianceCard = ({ compliance }: { compliance: any }) => {
             setIsViewerOpen(false);
             setSelectedDocument(null);
           }}
-          allDocuments={compliance.compliance_files}
+          allDocuments={compliance.compliance_files || []}
         />
       )}
     </>

@@ -6,8 +6,25 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, Download, Eye, Plus, Search, Trash } from "lucide-react";
+import {
+  Dialog,
+  DialogFooter,
+  DialogHeader,
+  DialogTrigger,
+  DialogContent,
+} from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  ArrowLeft,
+  Download,
+  Eye,
+  Plus,
+  Search,
+  Trash,
+  AlertCircle,
+  RefreshCw,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import AddExpenseModal from "./AddExpenseModal";
 import {
@@ -23,82 +40,6 @@ import AddComplianceModal from "./AddComplianceModal";
 import { ComplianceCard } from "./ComplianceCard";
 import { useGetVehicleCompliance } from "@/queries/compliance.queries";
 
-// Mock Data
-const mockComplianceData = [
-  {
-    id: 1,
-    vehiclePlateNumber: "ABC-1234",
-    complianceType: "Insurance",
-    documentNumber: "INS-2024-001",
-    issueDate: "2024-01-15",
-    expiryDate: "2025-01-15",
-    createdAt: "2024-01-10",
-    status: "active",
-    documents: [
-      {
-        id: 1,
-        name: "insurance-certificate.pdf",
-        url: "https://example.com/doc1.pdf",
-        type: "application/pdf",
-      },
-      {
-        id: 2,
-        name: "insurance-photo.jpg",
-        url: "https://images.unsplash.com/photo-1450101499163-c8848c66ca85",
-        type: "image/jpeg",
-      },
-    ],
-  },
-  {
-    id: 2,
-    vehiclePlateNumber: "XYZ-5678",
-    complianceType: "Road Worthiness",
-    documentNumber: "RW-2024-045",
-    issueDate: "2024-03-20",
-    expiryDate: "2025-03-20",
-    createdAt: "2024-03-15",
-    status: "expiring_soon",
-    documents: [
-      {
-        id: 3,
-        name: "roadworthiness-cert.pdf",
-        url: "https://example.com/doc2.pdf",
-        type: "application/pdf",
-      },
-      {
-        id: 4,
-        name: "vehicle-inspection.jpg",
-        url: "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7",
-        type: "image/jpeg",
-      },
-      {
-        id: 5,
-        name: "inspection-report.docx",
-        url: "https://example.com/doc3.docx",
-        type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      },
-    ],
-  },
-  {
-    id: 3,
-    vehiclePlateNumber: "DEF-9012",
-    complianceType: "Vehicle License",
-    documentNumber: "VL-2024-089",
-    issueDate: "2024-02-10",
-    expiryDate: "2024-11-10",
-    createdAt: "2024-02-05",
-    status: "expired",
-    documents: [
-      {
-        id: 6,
-        name: "license-document.pdf",
-        url: "https://example.com/doc4.pdf",
-        type: "application/pdf",
-      },
-    ],
-  },
-];
-
 const VehicleDetailsComponent = ({
   vehicleId,
   handleNavigation,
@@ -106,7 +47,6 @@ const VehicleDetailsComponent = ({
   vehicleId: number;
   handleNavigation: () => void;
 }) => {
-  // const vehicle = mockVehicles.find((v) => v.id === 1);
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [isAddComplianceOpen, setIsAddComplianceOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState();
@@ -116,7 +56,6 @@ const VehicleDetailsComponent = ({
   const GetVehicleQuery = useGetVehicle(vehicleId);
 
   // Get Vehicle Expenses
-  // debounce searchTerm
   const debounceSearchTerm = useDebounce(searchTerm, 500);
   const GetVehicleExpensesQuery = useGetVehicleExpenses(
     debounceSearchTerm,
@@ -136,17 +75,26 @@ const VehicleDetailsComponent = ({
     }
   }, [GetComplianceDataQuery.isSuccess]);
 
-  if (GetVehicleQuery.isPending) return <div>Loading...</div>;
-  // if (!vehicle) return <div>Vehicle not found</div>;
-
-  // const handleExport = (format: "csv" | "pdf") => {
-  //   console.log(`Exporting ${format} for vehicle ${vehicle.plateNumber}`);
-  //   alert(
-  //     `Exporting ${format.toUpperCase()} report for ${vehicle.plateNumber}`
-  //   );
-  // };
-
   const { push } = useProgressBarNavigation();
+
+  const handleRetryAll = () => {
+    GetVehicleQuery.refetch();
+    GetVehicleExpensesQuery.refetch();
+    GetTotalAmountSpentOnVehicleQuery.refetch();
+    GetComplianceDataQuery.refetch();
+  };
+
+  const isLoading =
+    GetVehicleQuery.isLoading ||
+    GetVehicleExpensesQuery.isLoading ||
+    GetTotalAmountSpentOnVehicleQuery.isLoading ||
+    GetComplianceDataQuery.isLoading;
+
+  const hasError =
+    GetVehicleQuery.isError ||
+    GetVehicleExpensesQuery.isError ||
+    GetTotalAmountSpentOnVehicleQuery.isError ||
+    GetComplianceDataQuery.isError;
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-6 lg:p-8">
@@ -161,15 +109,54 @@ const VehicleDetailsComponent = ({
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Vehicles
           </Button>
-          <h1 className="text-3xl font-bold">
-            {GetVehicleQuery.data && GetVehicleQuery.data.plate_number}
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            {GetVehicleQuery.data && GetVehicleQuery.data.make}{" "}
-            {GetVehicleQuery.data && GetVehicleQuery.data.model} (
-            {GetVehicleQuery.data && GetVehicleQuery.data.year})
-          </p>
+          {GetVehicleQuery.isLoading ? (
+            <>
+              <Skeleton className="h-9 w-48 mb-2" />
+              <Skeleton className="h-5 w-64" />
+            </>
+          ) : GetVehicleQuery.isError ? (
+            <>
+              <h1 className="text-3xl font-bold text-destructive">
+                Error Loading Vehicle
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                Failed to load vehicle details
+              </p>
+            </>
+          ) : (
+            <>
+              <h1 className="text-3xl font-bold">
+                {GetVehicleQuery.data?.plate_number}
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                {GetVehicleQuery.data?.make} {GetVehicleQuery.data?.model} (
+                {GetVehicleQuery.data?.year})
+              </p>
+            </>
+          )}
         </div>
+
+        {/* Global Error Alert */}
+        {hasError && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error Loading Data</AlertTitle>
+            <AlertDescription className="flex items-center justify-between">
+              <span>
+                There was a problem loading some vehicle data. Please try again.
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRetryAll}
+                className="ml-4"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Retry
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Vehicle Info Card */}
         <Card>
@@ -177,51 +164,122 @@ const VehicleDetailsComponent = ({
             <CardTitle>Vehicle Information</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Plate Number</p>
-                <p className="text-lg font-semibold">
-                  {GetVehicleQuery.data && GetVehicleQuery.data.plate_number}
+            {GetVehicleQuery.isLoading ? (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {[...Array(4)].map((_, index) => (
+                    <div key={index}>
+                      <Skeleton className="h-4 w-24 mb-2" />
+                      <Skeleton className="h-6 w-32" />
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-6 pt-6 border-t border-border">
+                  <Skeleton className="h-4 w-40 mb-2" />
+                  <Skeleton className="h-10 w-48" />
+                </div>
+              </>
+            ) : GetVehicleQuery.isError ? (
+              <div className="flex flex-col items-center justify-center py-8">
+                <AlertCircle className="h-12 w-12 text-destructive mb-4" />
+                <p className="text-sm text-muted-foreground mb-4">
+                  Failed to load vehicle information
                 </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => GetVehicleQuery.refetch()}
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Retry
+                </Button>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Make</p>
-                <p className="text-lg font-semibold">
-                  {GetVehicleQuery.data && GetVehicleQuery.data.make}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Model</p>
-                <p className="text-lg font-semibold">
-                  {GetVehicleQuery.data && GetVehicleQuery.data.model}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Year</p>
-                <p className="text-lg font-semibold">
-                  {GetVehicleQuery.data && GetVehicleQuery.data.year}
-                </p>
-              </div>
-            </div>
-            <div className="mt-6 pt-6 border-t border-border">
-              <p className="text-sm text-muted-foreground">
-                Total Amount Spent
-              </p>
-              <p className="text-3xl font-bold text-primary mt-1">
-                ₦
-                {GetTotalAmountSpentOnVehicleQuery.data
-                  ? GetTotalAmountSpentOnVehicleQuery.data.toLocaleString()
-                  : "0.00"}
-              </p>
-            </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">
+                      Plate Number
+                    </p>
+                    <p className="text-lg font-semibold">
+                      {GetVehicleQuery.data?.plate_number || "N/A"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Make</p>
+                    <p className="text-lg font-semibold">
+                      {GetVehicleQuery.data?.make || "N/A"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Model</p>
+                    <p className="text-lg font-semibold">
+                      {GetVehicleQuery.data?.model || "N/A"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Year</p>
+                    <p className="text-lg font-semibold">
+                      {GetVehicleQuery.data?.year || "N/A"}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-6 pt-6 border-t border-border">
+                  <p className="text-sm text-muted-foreground">
+                    Total Amount Spent
+                  </p>
+                  {GetTotalAmountSpentOnVehicleQuery.isLoading ? (
+                    <Skeleton className="h-10 w-48 mt-1" />
+                  ) : GetTotalAmountSpentOnVehicleQuery.isError ? (
+                    <p className="text-sm text-destructive mt-1">
+                      Failed to load
+                    </p>
+                  ) : (
+                    <p className="text-3xl font-bold text-primary mt-1">
+                      ₦
+                      {GetTotalAmountSpentOnVehicleQuery.data
+                        ? GetTotalAmountSpentOnVehicleQuery.data.toLocaleString()
+                        : "0.00"}
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
+
+        {/* Compliance exist warning dialog */}
+        <Dialog open={warnDialog} onOpenChange={setWarnDialog}>
+          <DialogContent>
+            <DialogHeader>Compliance already exist</DialogHeader>
+            <p>
+              The selected compliance type already exist, are you sure you want
+              to continue?
+            </p>
+            <DialogFooter className="gap-4 space-x-2 sm:gap-0">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setWarnDialog(false);
+                  setIsAddExpenseOpen(false);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button variant={"destructive"}>Delete</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Actions */}
         <div className="flex flex-col sm:flex-row gap-3">
           <Dialog open={isAddExpenseOpen} onOpenChange={setIsAddExpenseOpen}>
             <DialogTrigger asChild>
-              <Button className="w-full sm:w-auto">
+              <Button
+                className="w-full sm:w-auto"
+                disabled={GetVehicleQuery.isLoading}
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Add Expense
               </Button>
@@ -236,7 +294,10 @@ const VehicleDetailsComponent = ({
             onOpenChange={setIsAddComplianceOpen}
           >
             <DialogTrigger asChild>
-              <Button className="w-full sm:w-auto">
+              <Button
+                className="w-full sm:w-auto"
+                disabled={GetVehicleQuery.isLoading}
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Add Vehicle Compliance
               </Button>
@@ -247,23 +308,6 @@ const VehicleDetailsComponent = ({
               setWarnDialog={() => setWarnDialog(false)}
             />
           </Dialog>
-          {/* removed export buttons for now */}
-          {/* <Button
-            variant="outline"
-            // onClick={() => handleExport("csv")}
-            className="w-full sm:w-auto"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Export CSV
-          </Button>
-          <Button
-            variant="outline"
-            // onClick={() => handleExport("pdf")}
-            className="w-full sm:w-auto"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Export PDF
-          </Button> */}
         </div>
 
         {/* Expenses Table */}
@@ -276,17 +320,6 @@ const VehicleDetailsComponent = ({
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
-              {/* Search */}
-              {/* <div className="relative mb-4">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by type..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div> */}
-
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border">
@@ -303,13 +336,60 @@ const VehicleDetailsComponent = ({
                       Description
                     </th>
                     <th className="text-left py-3 px-4 font-medium text-sm">
-                      Invoice
+                      Actions
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {GetVehicleExpensesQuery.data &&
-                  GetVehicleExpensesQuery.data.length > 0 ? (
+                  {GetVehicleExpensesQuery.isLoading ? (
+                    [...Array(5)].map((_, index) => (
+                      <tr key={index} className="border-b border-border">
+                        <td className="py-3 px-4">
+                          <Skeleton className="h-5 w-24" />
+                        </td>
+                        <td className="py-3 px-4">
+                          <Skeleton className="h-5 w-28" />
+                        </td>
+                        <td className="py-3 px-4">
+                          <Skeleton className="h-5 w-20" />
+                        </td>
+                        <td className="py-3 px-4">
+                          <Skeleton className="h-5 w-40" />
+                        </td>
+                        <td className="py-3 px-4">
+                          <Skeleton className="h-8 w-16" />
+                        </td>
+                      </tr>
+                    ))
+                  ) : GetVehicleExpensesQuery.isError ? (
+                    <tr>
+                      <td colSpan={5} className="py-12">
+                        <div className="flex flex-col items-center justify-center text-center">
+                          <AlertCircle className="h-12 w-12 text-destructive mb-4" />
+                          <p className="text-sm text-muted-foreground mb-4">
+                            Failed to load expense history
+                          </p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => GetVehicleExpensesQuery.refetch()}
+                          >
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                            Retry
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : !GetVehicleExpensesQuery.data ||
+                    GetVehicleExpensesQuery.data.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-12 text-center">
+                        <p className="text-sm text-muted-foreground">
+                          No expense records found for this vehicle
+                        </p>
+                      </td>
+                    </tr>
+                  ) : (
                     GetVehicleExpensesQuery.data.map((expense) => (
                       <tr
                         key={expense.id}
@@ -325,7 +405,7 @@ const VehicleDetailsComponent = ({
                           ₦{expense.amount.toLocaleString()}
                         </td>
                         <td className="py-3 px-4 text-sm">
-                          {expense.description}
+                          {expense.description || "—"}
                         </td>
                         <td className="py-3 px-4 text-sm">
                           <Button
@@ -338,37 +418,86 @@ const VehicleDetailsComponent = ({
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => push(expense.invoice_url)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              // Add delete logic here
+                            }}
                           >
                             <Trash className="h-4 w-4 mr-1 text-red-500" />
                           </Button>
                         </td>
                       </tr>
                     ))
-                  ) : (
-                    <h1>No Expense Data</h1>
                   )}
                 </tbody>
               </table>
             </div>
           </CardContent>
         </Card>
+
+        {/* Vehicle Compliance Section */}
         <div>
           <h1 className="text-3xl font-bold">Vehicle Compliance</h1>
           <p className="text-muted-foreground mt-1">
             Monitor your vehicle compliance
           </p>
         </div>
-        {GetComplianceDataQuery.data &&
-        GetComplianceDataQuery.data.length > 0 ? (
+
+        {GetComplianceDataQuery.isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(3)].map((_, index) => (
+              <Card key={index}>
+                <CardHeader>
+                  <Skeleton className="h-6 w-32 mb-2" />
+                  <Skeleton className="h-4 w-24" />
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    {[...Array(4)].map((_, i) => (
+                      <div key={i}>
+                        <Skeleton className="h-3 w-20 mb-2" />
+                        <Skeleton className="h-4 w-24" />
+                      </div>
+                    ))}
+                  </div>
+                  <Skeleton className="h-20 w-full" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : GetComplianceDataQuery.isError ? (
+          <Card>
+            <CardContent className="py-12">
+              <div className="flex flex-col items-center justify-center text-center">
+                <AlertCircle className="h-12 w-12 text-destructive mb-4" />
+                <p className="text-sm text-muted-foreground mb-4">
+                  Failed to load compliance data
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => GetComplianceDataQuery.refetch()}
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Retry
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : !GetComplianceDataQuery.data ||
+          GetComplianceDataQuery.data.length === 0 ? (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <p className="text-sm text-muted-foreground">
+                No compliance records found for this vehicle
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {GetComplianceDataQuery.data.map((compliance) => (
               <ComplianceCard key={compliance.id} compliance={compliance} />
             ))}
-          </div>
-        ) : (
-          <div>
-            <p>No compliance found</p>
           </div>
         )}
       </div>
