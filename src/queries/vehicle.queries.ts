@@ -73,6 +73,7 @@ export const useGetAllVehicles = (search) => {
     model,
     year,
     users ( full_name ),
+    expenses (amount),
     created_at
             `
           )

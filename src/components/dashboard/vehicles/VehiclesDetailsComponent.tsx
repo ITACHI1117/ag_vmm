@@ -56,11 +56,8 @@ const VehicleDetailsComponent = ({
   const GetVehicleQuery = useGetVehicle(vehicleId);
 
   // Get Vehicle Expenses
-  const debounceSearchTerm = useDebounce(searchTerm, 500);
-  const GetVehicleExpensesQuery = useGetVehicleExpenses(
-    debounceSearchTerm,
-    vehicleId
-  );
+  // const debounceSearchTerm = useDebounce(searchTerm, 500);
+  const GetVehicleExpensesQuery = useGetVehicleExpenses(vehicleId);
 
   // Get Total amount Spent on Vehicle
   const GetTotalAmountSpentOnVehicleQuery =

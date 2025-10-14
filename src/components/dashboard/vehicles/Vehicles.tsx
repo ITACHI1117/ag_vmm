@@ -232,8 +232,10 @@ export const VehiclesComponent = () => {
                         </td>
                         <td className="py-4 px-6 font-medium">
                           ₦
-                          {vehicle.total_spent
-                            ? vehicle.total_spent.toLocaleString()
+                          {vehicle.expenses.length > 0
+                            ? vehicle.expenses
+                                .reduce((sum, item) => sum + item.amount, 0)
+                                .toLocaleString()
                             : "0.00"}
                         </td>
                         <td className="py-4 px-6">

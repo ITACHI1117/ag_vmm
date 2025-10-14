@@ -23,29 +23,26 @@ export const useAddExpenses = () => {
     onMutate: async (newExpenses) => {
       console.log(newExpenses);
 
-      await queryClient.cancelQueries({
-        queryKey: ["get-vehicle-expenses", "", newExpenses.vehicle_id],
-      });
+      const key = ["get-vehicle-expenses", newExpenses.vehicle_id];
 
-      const previousVehicles = queryClient.getQueriesData([
-        "get-vehicle-expenses",
-        "",
-        newExpenses.vehicle_id,
-      ]);
+      await queryClient.cancelQueries({ queryKey: key });
+
+      const previousExpenses = queryClient.getQueryData(key);
 
       // Optimistically update cache
-      queryClient.setQueryData(["get-vehicle-expenses"], (old: any) => [
+      queryClient.setQueryData(key, (old: any) => [
         ...(old || []),
         { ...newExpenses, id: Math.random().toString(), optimistic: true },
       ]);
-      return { previousVehicles };
+
+      return { previousExpenses };
     },
     // ❌ Rollback if there's an error
     onError: (err, newExpenses, context) => {
-      if (context?.previousVehicles) {
+      if (context?.previousExpenses) {
         queryClient.setQueryData(
-          ["get-vehicle-expenses", "", newExpenses.vehicle_id],
-          context.previousVehicles
+          ["get-vehicle-expenses", newExpenses.vehicle_id],
+          context.previousExpenses
         );
       }
       console.error("Error adding vehicle:", err.message);
@@ -57,7 +54,7 @@ export const useAddExpenses = () => {
         ...(old?.filter((v: any) => !v.optimistic) || []),
         res,
       ]);
-      console.log("Vehicle added successfully:", res);
+      console.log("Vehicle expenses added successfully:", res);
     },
 
     // // 🔄 Refetch to ensure data is fully synced
@@ -68,9 +65,9 @@ export const useAddExpenses = () => {
 };
 
 // Get all Expenses for a particular vehicle
-export const useGetVehicleExpenses = (search, vehicle_id) => {
+export const useGetVehicleExpenses = (vehicle_id) => {
   return useQuery({
-    queryKey: ["get-vehicle-expenses", search, vehicle_id],
+    queryKey: ["get-vehicle-expenses", vehicle_id],
     queryFn: async () => {
       let query = supabase
         .from("expenses")
@@ -88,13 +85,6 @@ export const useGetVehicleExpenses = (search, vehicle_id) => {
         )
         .eq("vehicle_id", vehicle_id)
         .order("created_at", { ascending: true });
-
-      if (search && search.trim() !== "") {
-        query = query.or(
-          `(expense_type.ilike.%${search}%,description.ilike.%${search}%)`
-        );
-      }
-
       const { data, error } = await query;
       if (error) throw error;
       return data;
