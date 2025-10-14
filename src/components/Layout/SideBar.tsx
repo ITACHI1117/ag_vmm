@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/authStore";
 import { useEffect } from "react";
 import { Badge } from "../ui/badge";
+import { toast } from "sonner";
 
 export const Sidebar = ({
   setIsOpen,
@@ -140,7 +141,7 @@ export const Sidebar = ({
             variant="outline"
             size="sm"
             className="w-full mt-2"
-            onClick={() => push("/support")}
+            onClick={() => toast.info("Contact us at aginsurance.com")}
           >
             Get Support
           </Button>
