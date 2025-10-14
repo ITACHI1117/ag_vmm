@@ -31,6 +31,7 @@ import { Calendar } from "@/components/ui/calendar";
 import {
   useAddCompliance,
   useDeleteCompliance,
+  useGetComplianceByVehicleId,
   useGetComplianceTypes,
   useUploadComplianceFiles,
 } from "@/queries/compliance.queries";
@@ -44,15 +45,6 @@ import { toast } from "sonner";
 import Image from "next/image";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { log } from "console";
-
-const complianceTypes = [
-  { id: 1, name: "Insurance", value: "insurance" },
-  { id: 2, name: "Road Worthiness", value: "road_worthiness" },
-  { id: 3, name: "Local Government Permit", value: "local_government_permit" },
-  { id: 4, name: "Parking Permit", value: "parking_permit" },
-  { id: 5, name: "Vehicle License", value: "vehicle_license" },
-];
 
 const AddComplianceModal = ({
   vehicleId,
@@ -77,6 +69,7 @@ const AddComplianceModal = ({
     }>
   >([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [complianceType, setComplianceType] = useState(false);
 
   const form = useForm({
     resolver: zodResolver(addComplianceSchema),
@@ -89,12 +82,29 @@ const AddComplianceModal = ({
     },
   });
 
+  const compliance_type_value = form.watch("compliance_type");
+
   //   Queries
   // get compliance types
   const GetComplianceTypesQuery = useGetComplianceTypes();
 
   //   upload compliance_files query
   const UploadComplianceFilesQuery = useUploadComplianceFiles();
+
+  // get compliance by vehicle id and type id, would be used for filtering
+  const GetComplianceByVehicleId = useGetComplianceByVehicleId(
+    { vehicleId, compliance_type_value },
+    { enabled: !!vehicleId && !!compliance_type_value }
+  );
+
+  useEffect(() => {
+    console.log(vehicleId);
+  }, []);
+  useEffect(() => {
+    if (GetComplianceByVehicleId.isSuccess) {
+      console.log(GetComplianceByVehicleId.data);
+    }
+  }, [GetComplianceByVehicleId.isSuccess]);
 
   useEffect(() => {
     if (GetComplianceTypesQuery.isSuccess) {
@@ -283,7 +293,8 @@ const AddComplianceModal = ({
   };
 
   const handleSubmit = async (data: any) => {
-    console.log(data);
+    console.log(data); // run a check to see if the selected compliance type already exists
+
     try {
       const { compliance_type, ...rest } = data;
       const complianceData = {

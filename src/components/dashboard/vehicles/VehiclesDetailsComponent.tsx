@@ -110,6 +110,7 @@ const VehicleDetailsComponent = ({
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [isAddComplianceOpen, setIsAddComplianceOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState();
+  const [warnDialog, setWarnDialog] = useState(false);
 
   // Get Vehicle Query
   const GetVehicleQuery = useGetVehicle(vehicleId);
@@ -243,9 +244,11 @@ const VehicleDetailsComponent = ({
             <AddComplianceModal
               vehicleId={vehicleId}
               onClose={() => setIsAddComplianceOpen(false)}
+              setWarnDialog={() => setWarnDialog(false)}
             />
           </Dialog>
-          <Button
+          {/* removed export buttons for now */}
+          {/* <Button
             variant="outline"
             // onClick={() => handleExport("csv")}
             className="w-full sm:w-auto"
@@ -260,7 +263,7 @@ const VehicleDetailsComponent = ({
           >
             <Download className="h-4 w-4 mr-2" />
             Export PDF
-          </Button>
+          </Button> */}
         </div>
 
         {/* Expenses Table */}

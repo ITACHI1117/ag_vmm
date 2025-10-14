@@ -100,3 +100,21 @@ export const useGetComplianceFiles = (vehicle_compliance_id) => {
     },
   });
 };
+
+// get compliance by vehicle id
+export const useGetComplianceByVehicleId = (data) => {
+  const vehicle_id = data.vehicleId;
+  const type_id = data.compliance_type_value;
+  return useQuery({
+    queryKey: ["get-compliance-by-vehicle-id", vehicle_id, type_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vehicle_compliance")
+        .select()
+        .eq("vehicle_id", vehicle_id)
+        .eq("type_id", type_id);
+      if (error) return error;
+      return data;
+    },
+  });
+};

@@ -52,6 +52,8 @@ import {
   useGetTotalSpentCurrentYear,
   useGetTotalVehicles,
 } from "@/queries/dashboard.queries";
+import { useGetFewExpenses } from "@/queries/expense.queries";
+import { format } from "date-fns";
 
 // Mock Data
 const mockVehicles = [
@@ -145,32 +147,8 @@ const mockExpenses = [
   },
 ];
 
-const monthlySpending = [
-  { month: "Jan", amount: 125000 },
-  { month: "Feb", amount: 98000 },
-  { month: "Mar", amount: 145000 },
-  { month: "Apr", amount: 112000 },
-  { month: "May", amount: 168000 },
-  { month: "Jun", amount: 134000 },
-  { month: "Jul", amount: 156000 },
-  { month: "Aug", amount: 189000 },
-  { month: "Sep", amount: 142000 },
-  { month: "Oct", amount: 95000 },
-];
-
-const expenseTypeData = [
-  { name: "Oil Change", value: 45000, color: "#6366f1" },
-  { name: "Tire Replacement", value: 125000, color: "#8b5cf6" },
-  { name: "Brake Service", value: 78000, color: "#ec4899" },
-  { name: "Engine Repair", amount: 210000, color: "#f59e0b" },
-  { name: "Battery", value: 52000, color: "#10b981" },
-];
-
 // Dashboard Component
 export const Dashboard = () => {
-  const totalVehicles = mockVehicles.length;
-  const totalSpent = mockVehicles.reduce((sum, v) => sum + v.totalSpent, 0);
-  const totalExpenses = mockExpenses.length;
   const { push } = useProgressBarNavigation();
 
   // Try combine these three queries to one
@@ -182,11 +160,14 @@ export const Dashboard = () => {
 
   const GetMonthlyExpenses = useGetMonthlyExpenses();
 
+  // get recent expenses
+  const GetFewExpenses = useGetFewExpenses();
+
   useEffect(() => {
-    if (GetMonthlyExpenses.isSuccess) {
-      console.log(GetMonthlyExpenses.data);
+    if (GetFewExpenses.isSuccess) {
+      console.log(GetFewExpenses.data);
     }
-  }, [GetMonthlyExpenses.isSuccess]);
+  }, [GetFewExpenses.isSuccess]);
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-6 lg:p-8 w-full ">
@@ -363,37 +344,45 @@ export const Dashboard = () => {
                     <th className="text-left py-3 px-4 font-medium text-sm">
                       Amount
                     </th>
-                    <th className="text-left py-3 px-4 font-medium text-sm">
+                    {/* <th className="text-left py-3 px-4 font-medium text-sm">
                       Invoice
-                    </th>
+                    </th> */}
                   </tr>
                 </thead>
                 <tbody>
-                  {mockExpenses.slice(0, 5).map((expense) => {
-                    const vehicle = mockVehicles.find(
-                      (v) => v.id === expense.vehicleId
-                    );
-                    return (
-                      <tr
-                        key={expense.id}
-                        className="border-b border-border hover:bg-accent/50 transition-colors"
-                      >
-                        <td className="py-3 px-4 text-sm">{expense.date}</td>
-                        <td className="py-3 px-4 text-sm">
-                          {vehicle?.plateNumber}
-                        </td>
-                        <td className="py-3 px-4 text-sm">{expense.type}</td>
-                        <td className="py-3 px-4 text-sm font-medium">
-                          ₦{expense.amount.toLocaleString()}
-                        </td>
-                        <td className="py-3 px-4 text-sm">
-                          <Button variant="ghost" size="sm">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  {GetFewExpenses.data &&
+                    GetFewExpenses.data.map((expense) => {
+                      // const vehicle = mockVehicles.find(
+                      //   (v) => v.id === expense.vehicleId
+                      // );
+                      return (
+                        <tr
+                          key={expense.id}
+                          className="border-b border-border hover:bg-accent/50 transition-colors"
+                        >
+                          <td className="py-3 px-4 text-sm">
+                            {format(
+                              new Date(expense.created_at),
+                              "MMM dd, yyyy"
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-sm">
+                            {expense.vehicles?.plate_number}
+                          </td>
+                          <td className="py-3 px-4 text-sm">
+                            {expense.expense_type}
+                          </td>
+                          <td className="py-3 px-4 text-sm font-medium">
+                            ₦{expense.amount.toLocaleString()}
+                          </td>
+                          {/* <td className="py-3 px-4 text-sm">
+                            <Button variant="ghost" size="sm">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </td> */}
+                        </tr>
+                      );
+                    })}
                 </tbody>
               </table>
             </div>

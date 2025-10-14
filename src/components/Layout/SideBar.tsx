@@ -61,12 +61,12 @@ export const Sidebar = ({
       icon: Bell,
       isComingSoon: true,
     },
-    {
-      title: "Settings",
-      href: "/dashboard/settings",
-      icon: Settings,
-      isComingSoon: true,
-    },
+    // {
+    //   title: "Settings",
+    //   href: "/dashboard/settings",
+    //   icon: Settings,
+    //   isComingSoon: true,
+    // },
   ];
 
   return (

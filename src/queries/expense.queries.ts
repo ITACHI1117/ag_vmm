@@ -101,3 +101,27 @@ export const useGetVehicleExpenses = (search, vehicle_id) => {
     },
   });
 };
+
+// for dashboard  get 5 recent expenses
+export const useGetFewExpenses = () => {
+  return useQuery({
+    queryKey: ["get-few-expenses"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("expenses")
+        .select(
+          `
+          id,
+          amount,
+          created_at,
+          expense_type,
+          vehicles (plate_number)
+          `
+        )
+        .order("created_at", { ascending: true })
+        .limit(5);
+      if (error) throw error;
+      return data;
+    },
+  });
+};
