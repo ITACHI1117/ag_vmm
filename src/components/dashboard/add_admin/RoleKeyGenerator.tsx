@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -26,14 +26,41 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  useGetActiveKey,
+  useUploadKey,
+  usGetRoles,
+} from "@/queries/keyGenerator.queries";
+import { toast } from "sonner";
 
 const RoleKeyGenerator = () => {
-  const [currentKey, setCurrentKey] = useState(
-    "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
-  );
-  const [selectedRole, setSelectedRole] = useState("admin");
+  const [currentKey, setCurrentKey] = useState("");
+  const [isGenerated, setIsGenerated] = useState(false);
+  const [keyBorderColor, setKeyBorderColor] = useState("gray");
+  const [selectedRole, setSelectedRole] = useState(undefined);
   const [copied, setCopied] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // get active key query
+  const GetActiveKeyQuery = useGetActiveKey();
+  // get roles query
+  const GetRolesQuery = usGetRoles();
+  // generate submit key query
+  const SubmitKeyQuery = useUploadKey();
+
+  useEffect(() => {
+    if (GetActiveKeyQuery.isSuccess) {
+      if (GetActiveKeyQuery.data.length > 0) {
+        console.log(GetActiveKeyQuery.data[0].role_key);
+        setCurrentKey(GetActiveKeyQuery.data[0].role_key);
+        setKeyBorderColor("green");
+      } else {
+        setCurrentKey("No active key");
+        setKeyBorderColor("red");
+      }
+      console.log(GetActiveKeyQuery.data);
+    }
+  }, [GetActiveKeyQuery.isSuccess]);
 
   // Generate a UUID v4
   const generateUUID = () => {
@@ -49,16 +76,47 @@ const RoleKeyGenerator = () => {
 
   const handleGenerateKey = async () => {
     setIsGenerating(true);
-
-    // Simulate API call
-    setTimeout(() => {
-      const newKey = generateUUID();
-      setCurrentKey(newKey);
+    // if there is an active key no need to generate
+    // when the user generates a key we set is generated to true to avoid the generation of another active key
+    if (
+      (GetActiveKeyQuery.data && GetActiveKeyQuery.data.length > 0) ||
+      isGenerated
+    ) {
+      toast.error("An active key already exists");
       setIsGenerating(false);
+      return;
+    }
 
-      // TODO: Save to database with selected role
-      console.log("Generated key:", newKey, "for role:", selectedRole);
-    }, 500);
+    // return if no role was selected
+    if (!selectedRole) {
+      toast.error("Select role");
+      setIsGenerating(false);
+      return;
+    }
+    // just an extra check
+    if (GetActiveKeyQuery.data && GetActiveKeyQuery.data.length <= 0) {
+      const key = generateUUID();
+      // submit key
+      // set status to active here
+      const promise = SubmitKeyQuery.mutateAsync({
+        role_type_id: selectedRole,
+        role_key: key,
+        status: "active",
+      });
+
+      toast.promise(promise, {
+        loading: "Generating key...",
+        success: "Key Generated Successfully",
+        error: "There was an error while trying to generate key",
+      });
+
+      const result = await promise;
+      // set key state and other states
+      setCurrentKey(result.role_key);
+      setIsGenerated(true);
+      setKeyBorderColor("green");
+      setIsGenerating(false);
+    }
   };
 
   const handleCopyKey = () => {
@@ -106,7 +164,7 @@ const RoleKeyGenerator = () => {
               <Input
                 value={currentKey}
                 readOnly
-                className="font-mono text-sm"
+                className={`font-mono text-sm border-${keyBorderColor}-300 focus-visible:ring-${keyBorderColor}-300 focus-visible:border-${keyBorderColor}-300`}
               />
               <Button
                 variant="outline"
@@ -133,10 +191,12 @@ const RoleKeyGenerator = () => {
                 <SelectValue placeholder="Select role" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="admin">Admin</SelectItem>
-                <SelectItem value="manager">Manager</SelectItem>
-                <SelectItem value="staff">Staff</SelectItem>
-                <SelectItem value="viewer">Viewer</SelectItem>
+                {GetRolesQuery.data &&
+                  GetRolesQuery.data.map((role) => (
+                    <SelectItem key={role.id} value={role.id}>
+                      {role.name}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">
@@ -146,7 +206,7 @@ const RoleKeyGenerator = () => {
 
           <Button
             onClick={handleGenerateKey}
-            disabled={isGenerating}
+            disabled={isGenerating || !GetActiveKeyQuery.data}
             className="w-full"
           >
             {isGenerating ? (
@@ -196,7 +256,9 @@ const RoleKeyGenerator = () => {
         </CardContent>
       </Card>
 
-      <Card>
+      {/* removed recently generated keys for now */}
+
+      {/* <Card>
         <CardHeader>
           <CardTitle>Recent Generated Keys</CardTitle>
           <CardDescription>Last 5 generated keys</CardDescription>
@@ -248,7 +310,7 @@ const RoleKeyGenerator = () => {
             ))}
           </div>
         </CardContent>
-      </Card>
+      </Card> */}
     </div>
   );
 };
