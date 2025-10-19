@@ -233,7 +233,7 @@ export const VehiclesComponent = () => {
                         </td>
                         <td className="py-4 px-6 font-medium">
                           ₦
-                          {vehicle.expenses.length > 0
+                          {vehicle.expenses && vehicle.expenses.length > 0
                             ? vehicle.expenses
                                 .reduce((sum, item) => sum + item.amount, 0)
                                 .toLocaleString()
