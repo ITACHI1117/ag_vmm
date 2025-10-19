@@ -3,6 +3,7 @@
 import { queryClient } from "@/config/queryclient";
 import { supabase } from "@/supabse-client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 // Add vehicles to the supabse table
 export const useAddExpenses = () => {
@@ -109,7 +110,7 @@ export const useGetFewExpenses = () => {
           amount,
           created_at,
           expense_type,
-          vehicles (plate_number)
+          vehicles (plate_number, id)
           `
         )
         .order("created_at", { ascending: true })
@@ -130,5 +131,37 @@ export const useUploadExpensesFiles = () => {
       if (error) throw error;
       return res;
     },
+  });
+};
+
+// Delete expenses
+export const useDeleteExpenses = () => {
+  return useMutation({
+    mutationFn: async (vehicle_id) => {
+      const { data, error } = await supabase
+        .from("expenses")
+        .delete()
+        .eq("id", vehicle_id);
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => toast.success("Expense deleted"),
+    onError: (err) => toast.error(err.message),
+  });
+};
+
+// Delete expenses files
+export const useDeleteExpensesFiles = () => {
+  return useMutation({
+    mutationFn: async (expenses_id) => {
+      const { data: res, error } = await supabase
+        .from("expenses_files")
+        .delete()
+        .eq("expenses_id", expenses_id);
+      if (error) throw error;
+      return res;
+    },
+    onSuccess: () => toast.success("Expense Files deleted"),
+    onError: (err) => toast.error(err.message),
   });
 };

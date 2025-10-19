@@ -38,7 +38,8 @@ export const DocumentViewerDialog = ({
   const isImage =
     fileName.endsWith(".jpg") ||
     fileName.endsWith(".jpeg") ||
-    fileName.endsWith(".png");
+    fileName.endsWith(".png") ||
+    fileName.endsWith(".PNG");
 
   const isPDF = fileName.endsWith(".pdf");
   const isViewable = isImage || isPDF;

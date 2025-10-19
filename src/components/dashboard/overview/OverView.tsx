@@ -350,8 +350,11 @@ export const Dashboard = () => {
                   ) : (
                     GetFewExpenses.data.map((expense) => (
                       <tr
+                        onClick={() =>
+                          push(`vehicles/vehicle/${expense.vehicles.id}`)
+                        } // routes to the vehicle page
                         key={expense.id}
-                        className="border-b border-border hover:bg-accent/50 transition-colors"
+                        className="cursor-pointer border-b border-border hover:bg-accent/50 transition-colors"
                       >
                         <td className="py-3 px-4 text-sm">
                           {format(new Date(expense.created_at), "MMM dd, yyyy")}

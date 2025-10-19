@@ -25,7 +25,10 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { useDeleteCompliance } from "@/queries/compliance.queries";
+import {
+  useDeleteCompliance,
+  useDeleteComplianceFiles,
+} from "@/queries/compliance.queries";
 import { toast } from "sonner";
 
 // Compliance Card Component with Error Handling
@@ -46,7 +49,7 @@ export const ComplianceCard = ({
   //   delete compliance query
   const DeleteCompliance = useDeleteCompliance();
   //  delete compliance files query
-  const DeleteComplianceFiles = useDeleteCompliance();
+  const DeleteComplianceFiles = useDeleteComplianceFiles();
 
   const handleDocumentClick = (document: any) => {
     setSelectedDocument(document);

@@ -127,7 +127,8 @@ export const Sidebar = ({
       </nav>
 
       {/* Sidebar Footer */}
-      <div className="border-t border-border p-4">
+      {/* removed the sidebar footer for now */}
+      {/* <div className="border-t border-border p-4">
         <div className="rounded-lg bg-primary/10 p-3">
           <p className="text-xs font-medium text-primary">Need Help?</p>
           <p className="text-xs text-muted-foreground mt-1">
@@ -142,7 +143,7 @@ export const Sidebar = ({
             Get Support
           </Button>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 };
