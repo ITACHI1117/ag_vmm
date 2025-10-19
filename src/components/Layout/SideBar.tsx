@@ -26,10 +26,6 @@ export const Sidebar = ({
   const { push } = useProgressBarNavigation();
   const { user } = useAuthStore();
 
-  useEffect(() => {
-    console.log(user?.role);
-  }, [user]);
-
   const navItems = [
     {
       title: "Dashboard",

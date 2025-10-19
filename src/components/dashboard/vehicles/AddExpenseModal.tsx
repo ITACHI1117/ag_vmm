@@ -1,3 +1,4 @@
+"use client";
 import { Button } from "@/components/ui/button";
 import {
   DialogContent,
@@ -23,7 +24,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useAddExpenses } from "@/queries/expense.queries";
+import {
+  useAddExpenses,
+  useUploadExpensesFiles,
+} from "@/queries/expense.queries";
 import { addExpenseSchema } from "@/schema/addExpenseSchema";
 import { supabase } from "@/supabse-client";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -50,18 +54,30 @@ const AddExpenseModal = ({
   vehicleId,
   onClose,
 }: {
-  vehicleId?: number;
+  vehicleId?: string;
   onClose: () => void;
 }) => {
+  // Add expenses query
   const AddExpensesQuery = useAddExpenses();
+
+  const UploadExpenseFilesQuery = useUploadExpensesFiles();
 
   const [uploadProgress, setUploadProgress] = useState(0);
   const [invoiceUrl, setInvoiceUrl] = useState<string>("");
   const [invoicePath, setInvoicePath] = useState<string>("");
+  const [isUploading, setIsUploading] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<{
     name: string;
     type: string;
   } | null>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<
+    Array<{
+      name: string;
+      type: string;
+      url: string;
+      path: string;
+    }>
+  >([]);
 
   const form = useForm({
     resolver: zodResolver(addExpenseSchema),
@@ -97,13 +113,17 @@ const AddExpenseModal = ({
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
+    if (!e.target.files || e.target.files.length === 0) return;
 
+    const files = Array.from(e.target.files);
+    setIsUploading(true);
+
+    // Process all files in parallel
+    const uploadPromises = files.map(async (file, index) => {
       // Validate file size (5MB limit)
       if (file.size > 5 * 1024 * 1024) {
-        toast.error("File size must be less than 5MB");
-        return;
+        toast.error(`${file.name}: File size must be less than 5MB`);
+        return null;
       }
 
       // Validate file type
@@ -114,23 +134,27 @@ const AddExpenseModal = ({
         "image/png",
       ];
       if (!allowedTypes.includes(file.type)) {
-        toast.error("Only PDF, JPG, and PNG files are allowed");
-        return;
+        toast.error(`${file.name}: Only PDF, JPG, and PNG files are allowed`);
+        return null;
       }
 
       try {
-        // Start progress
-        setUploadProgress(10);
-        toast.loading("Uploading invoice...", { id: "upload-toast" });
+        toast.loading(`Uploading ${file.name}...`, {
+          id: `upload-${file.name}`,
+        });
 
-        // Create unique file path
+        // Generate unique file path
         const fileExt = file.name.split(".").pop();
-        const fileName = `${Math.random()
-          .toString(36)
-          .substring(2)}-${Date.now()}.${fileExt}`;
-        const filePath = `invoices/${fileName}`;
+        const timestamp = Date.now();
+        const randomString = Math.random().toString(36).substring(2, 15);
+        const sanitizedOriginalName = file.name
+          .replace(/\.[^/.]+$/, "")
+          .replace(/[^a-z0-9]/gi, "_")
+          .substring(0, 50);
 
-        setUploadProgress(30);
+        // Add index to ensure uniqueness even if files are uploaded at exact same millisecond
+        const fileName = `${sanitizedOriginalName}_${timestamp}_${index}_${randomString}.${fileExt}`;
+        const filePath = `invoices/${fileName}`;
 
         // Upload to Supabase Storage
         const { data: uploadData, error: uploadError } = await supabase.storage
@@ -140,76 +164,76 @@ const AddExpenseModal = ({
             upsert: false,
           });
 
-        if (uploadError) {
-          throw uploadError;
-        }
-
-        setUploadProgress(70);
+        if (uploadError) throw uploadError;
 
         // Get public URL
         const { data: urlData } = supabase.storage
           .from("invoices")
           .getPublicUrl(filePath);
 
-        setUploadProgress(90);
+        toast.success(`${file.name} uploaded successfully!`, {
+          id: `upload-${file.name}`,
+        });
 
-        // Save file info
-        setInvoiceUrl(urlData.publicUrl);
-        console.log(urlData.publicUrl);
-        setInvoicePath(filePath);
-        setUploadedFile({
+        return {
           name: file.name,
           type: file.type,
-        });
-
-        setUploadProgress(100);
-
-        // Success toast
-        toast.success("Invoice uploaded successfully!", { id: "upload-toast" });
-
-        // Reset progress after delay
-        setTimeout(() => {
-          setUploadProgress(0);
-        }, 1000);
+          url: urlData.publicUrl,
+          path: filePath,
+        };
       } catch (error: any) {
         console.error("Upload error:", error);
-        setUploadProgress(0);
-        toast.error(error.message || "Failed to upload invoice", {
-          id: "upload-toast",
+        toast.error(error.message || `Failed to upload ${file.name}`, {
+          id: `upload-${file.name}`,
         });
+        return null;
       }
+    });
+
+    // Wait for all uploads to complete
+    const results = await Promise.all(uploadPromises);
+
+    // Filter out failed uploads (null values) and add successful ones to state
+    const successfulUploads = results.filter((result) => result !== null);
+    setUploadedFiles((prev) => [...prev, ...successfulUploads]);
+
+    setIsUploading(false);
+    e.target.value = ""; // reset input
+  };
+
+  const deleteFileFromStorage = async (filePath: string) => {
+    try {
+      const { error } = await supabase.storage
+        .from("invoices")
+        .remove([filePath]);
+
+      if (error) {
+        console.error("Error deleting file:", error);
+      }
+    } catch (error) {
+      console.error("Error in deleteFileFromStorage:", error);
     }
   };
 
-  const handleRemoveInvoice = async () => {
-    if (!invoicePath) return;
+  const handleRemoveFile = async (index: number) => {
+    const file = uploadedFiles[index];
+    if (!file) return;
 
     try {
-      // toast.loading("Removing invoice...", { id: "remove-toast" });
+      await deleteFileFromStorage(file.path);
 
-      await deleteInvoiceFromStorage(invoicePath);
-
-      // Reset state
-      setInvoiceUrl("");
-      setInvoicePath("");
-      setUploadedFile(null);
-      setUploadProgress(0);
-
-      // toast.success("Invoice removed successfully!", { id: "remove-toast" });
+      // Remove from state
+      setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
     } catch (error: any) {
       console.error("Remove error:", error);
-      toast.error(error.message || "Failed to remove invoice", {
-        id: "remove-toast",
-      });
+      toast.error(error.message || "Failed to remove file");
     }
   };
 
   const handleSubmit = async (data: any) => {
     try {
       // Prepare expense data
-      const expenseData = invoiceUrl
-        ? { ...data, invoice_url: invoiceUrl, vehicle_id: vehicleId }
-        : { ...data, vehicle_id: vehicleId };
+      const expenseData = { ...data, vehicle_id: vehicleId };
 
       const promise = AddExpensesQuery.mutateAsync(expenseData);
 
@@ -219,7 +243,25 @@ const AddExpenseModal = ({
         error: "Failed to add expense",
       });
 
-      await promise;
+      const result = await promise;
+
+      if (uploadedFiles.length > 0) {
+        const filesToInsert = uploadedFiles.map((file) => ({
+          expenses_id: result.id,
+          file_url: file.url,
+          file_name: file.name,
+        }));
+
+        // upload files url to the expenses_files table
+        const uploadPromise =
+          UploadExpenseFilesQuery.mutateAsync(filesToInsert);
+        toast.promise(uploadPromise, {
+          loading: "Uploading documents...",
+          success: "Documents uploaded successfully!",
+          error: "Failed to upload documents",
+        });
+        await uploadPromise;
+      }
 
       handleCloseModal();
     } catch (error: any) {
@@ -237,11 +279,8 @@ const AddExpenseModal = ({
   const handleCloseModal = () => {
     onClose();
     form.reset();
-    // Reset state
-    setInvoiceUrl("");
-    setInvoicePath("");
-    setUploadedFile(null);
-    setUploadProgress(0);
+    setUploadedFiles([]);
+    setIsUploading(false);
   };
 
   return (
@@ -328,85 +367,90 @@ const AddExpenseModal = ({
           <div className="space-y-2">
             <Label htmlFor="invoice">Upload Invoice</Label>
 
-            {!uploadedFile ? (
-              <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary transition-colors cursor-pointer">
-                <input
-                  id="invoice"
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  className="hidden"
-                  onChange={handleFileChange}
-                  disabled={uploadProgress > 0 && uploadProgress < 100}
-                />
-                <label htmlFor="invoice" className="cursor-pointer">
-                  <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-sm font-medium">Click to upload invoice</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    PDF, JPG, PNG (Max 5MB)
-                  </p>
+            {/* Upload Area */}
+            <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary transition-colors cursor-pointer">
+              <input
+                id="documents"
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png"
+                multiple
+                className="hidden"
+                onChange={handleFileChange}
+                disabled={isUploading}
+              />
+              <label htmlFor="documents" className="cursor-pointer">
+                <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-sm font-medium">Click to upload documents</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  PDF, JPG, PNG (Max 5MB each)
+                </p>
+              </label>
+            </div>
 
-                  {uploadProgress > 0 && uploadProgress < 100 && (
-                    <div className="mt-3 w-full bg-secondary rounded-full h-2">
-                      <div
-                        className="bg-primary h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${uploadProgress}%` }}
-                      />
-                    </div>
-                  )}
-                </label>
-              </div>
-            ) : (
-              <div className="border border-border rounded-lg p-4">
-                <div className="flex items-start gap-3">
-                  {/* Preview */}
-                  <div className="flex-shrink-0">
-                    {isImage ? (
-                      <div className="relative w-20 h-20 rounded overflow-hidden border border-border">
-                        <Image
-                          src={invoiceUrl}
-                          alt="Invoice preview"
-                          fill
-                          className="object-cover"
-                        />
+            {/* Uploaded Files List */}
+            {uploadedFiles.length > 0 && (
+              <div className="space-y-2 mt-4">
+                {uploadedFiles.map((file, index) => {
+                  const isImage = file.type.startsWith("image/");
+                  const isPDF = file.type === "application/pdf";
+
+                  return (
+                    <div
+                      key={index}
+                      className="border border-border rounded-lg p-3"
+                    >
+                      <div className="flex items-start gap-3">
+                        {/* Preview */}
+                        <div className="flex-shrink-0">
+                          {isImage ? (
+                            <div className="relative w-16 h-16 rounded overflow-hidden border border-border">
+                              <Image
+                                src={file.url}
+                                alt={file.name}
+                                fill
+                                className="object-cover"
+                              />
+                            </div>
+                          ) : isPDF ? (
+                            <div className="w-16 h-16 rounded bg-muted flex items-center justify-center">
+                              <FileText className="h-8 w-8 text-muted-foreground" />
+                            </div>
+                          ) : null}
+                        </div>
+
+                        {/* File Info */}
+                        <div className="flex-1 min-w-0">
+                          <p className="block w-40 overflow-hidden whitespace-nowrap text-ellipsis text-sm font-medium">
+                            {file.name}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Check className="h-3 w-3 text-green-600" />
+                            <p className="text-xs text-green-600">Uploaded</p>
+                          </div>
+                          <a
+                            href={file.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-primary hover:underline mt-1 inline-block"
+                          >
+                            View file
+                          </a>
+                        </div>
+
+                        {/* Remove Button */}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemoveFile(index)}
+                          className="flex-shrink-0"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
                       </div>
-                    ) : isPDF ? (
-                      <div className="w-20 h-20 rounded bg-muted flex items-center justify-center">
-                        <FileText className="h-10 w-10 text-muted-foreground" />
-                      </div>
-                    ) : null}
-                  </div>
-
-                  {/* File Info */}
-                  <div className="flex-1 min-w-0">
-                    <p className="block w-40 overflow-hidden whitespace-nowrap text-ellipsis text-sm font-medium">
-                      {uploadedFile.name}
-                    </p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Check className="h-3 w-3 text-green-600" />
-                      <p className="text-xs text-green-600">
-                        Uploaded successfully
-                      </p>
                     </div>
-                    <a
-                      href={invoiceUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-primary hover:underline mt-1 inline-block"
-                    />
-                    View full size
-                  </div>
-
-                  {/* Remove Button */}
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleRemoveInvoice}
-                    className="flex-shrink-0"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -418,7 +462,12 @@ const AddExpenseModal = ({
             <Button
               type="submit"
               className="cursor-pointer"
-              disabled={AddExpensesQuery.isPending}
+              disabled={
+                AddExpensesQuery.isPending ||
+                UploadExpenseFilesQuery.isPending ||
+                isUploading ||
+                uploadedFiles.length == 0
+              }
             >
               {AddExpensesQuery.isPending ? "Adding..." : "Add Expense"}
             </Button>

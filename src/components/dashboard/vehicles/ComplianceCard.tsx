@@ -2,11 +2,31 @@
 import { format } from "date-fns";
 import { DocumentThumbnail } from "./DocumentThumbnail";
 import { DocumentViewerDialog } from "./DocumentViewer";
-import { AlertCircle, Calendar, FileCheck, AlertTriangle } from "lucide-react";
+import {
+  AlertCircle,
+  Calendar,
+  FileCheck,
+  AlertTriangle,
+  Trash,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { useDeleteCompliance } from "@/queries/compliance.queries";
+import { toast } from "sonner";
 
 // Compliance Card Component with Error Handling
 export const ComplianceCard = ({
@@ -21,11 +41,44 @@ export const ComplianceCard = ({
   const [selectedDocument, setSelectedDocument] = useState<any>(null);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [imageError, setImageError] = useState<{ [key: string]: boolean }>({});
+  const [isAlertOpen, setIsAlertOpen] = useState<boolean>();
+
+  //   delete compliance query
+  const DeleteCompliance = useDeleteCompliance();
+  //  delete compliance files query
+  const DeleteComplianceFiles = useDeleteCompliance();
 
   const handleDocumentClick = (document: any) => {
     setSelectedDocument(document);
     setIsViewerOpen(true);
   };
+
+  const handleDelete = async (id: string) => {
+    console.log(id);
+    try {
+      const promise = DeleteCompliance.mutateAsync(id);
+
+      await promise;
+
+      DeleteComplianceFiles.mutateAsync(id);
+    } catch (error) {
+      console.log(error);
+      toast.error(`${error.message}`);
+    }
+  };
+
+  useEffect(() => {
+    if (DeleteCompliance.isSuccess && DeleteComplianceFiles.isSuccess) {
+      toast.success("Compliance Deleted");
+    }
+  }, [DeleteComplianceFiles.isSuccess, DeleteCompliance.isSuccess]);
+
+  useEffect(() => {
+    console.log(compliance.id);
+    compliance.compliance_files.map((file) => {
+      console.log(file.compliance_id);
+    });
+  }, [compliance]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -114,20 +167,52 @@ export const ComplianceCard = ({
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1">
-                <div className="font-mono text-sm font-bold px-2 py-1 bg-primary/10 text-primary rounded">
-                  {compliance.vehicles?.plate_number || "N/A"}
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="font-mono text-sm font-bold px-2 py-1 bg-primary/10 text-primary rounded">
+                    {compliance.vehicles?.plate_number || "N/A"}
+                  </div>
+                  <Badge
+                    variant="outline"
+                    className={`${getStatusColor(
+                      compliance.status
+                    )} flex items-center gap-1`}
+                  >
+                    {getStatusIcon(compliance.status)}
+                    {compliance.status?.replace("_", " ") || "Unknown"}
+                  </Badge>
                 </div>
-                <Badge
-                  variant="outline"
-                  className={`${getStatusColor(
-                    compliance.status
-                  )} flex items-center gap-1`}
-                >
-                  {getStatusIcon(compliance.status)}
-                  {compliance.status?.replace("_", " ") || "Unknown"}
-                </Badge>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <div className="cursor-pointer p-2 bg-red-100 rounded-2xl">
+                      <Trash className="text-red-500 h-4 w-4" />
+                    </div>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        Are you absolutely sure?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. This will permanently
+                        delete this compliance.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel className="cursor-pointer">
+                        Cancel
+                      </AlertDialogCancel>
+                      <AlertDialogAction
+                        className="cursor-pointer"
+                        onClick={() => handleDelete(compliance.id)}
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
+
               <CardTitle className="text-lg">
                 {compliance.compliance_types?.name || "Unknown Type"}
               </CardTitle>

@@ -1,3 +1,4 @@
+"use client";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -42,21 +43,26 @@ import { useGetVehicleCompliance } from "@/queries/compliance.queries";
 
 const VehicleDetailsComponent = ({
   vehicleId,
-  handleNavigation,
-}: {
-  vehicleId: number;
-  handleNavigation: () => void;
+}: // handleNavigation,
+{
+  vehicleId: string;
+  // handleNavigation: () => void;
 }) => {
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [isAddComplianceOpen, setIsAddComplianceOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState();
   const [warnDialog, setWarnDialog] = useState(false);
+  const { back } = useProgressBarNavigation();
+  const [activeCompliance, setActiveCompliance] = useState();
+  const [selectedDocument, setSelectedDocument] = useState();
+
+  //  navigator
+  const { push } = useProgressBarNavigation();
 
   // Get Vehicle Query
   const GetVehicleQuery = useGetVehicle(vehicleId);
 
   // Get Vehicle Expenses
-  // const debounceSearchTerm = useDebounce(searchTerm, 500);
   const GetVehicleExpensesQuery = useGetVehicleExpenses(vehicleId);
 
   // Get Total amount Spent on Vehicle
@@ -66,13 +72,25 @@ const VehicleDetailsComponent = ({
   // Get Compliance Data
   const GetComplianceDataQuery = useGetVehicleCompliance(vehicleId);
 
+  // Get Expenses Files
+
+  useEffect(() => {
+    if (GetVehicleExpensesQuery.isSuccess) {
+      console.log(GetVehicleExpensesQuery.data);
+    }
+  }, [GetVehicleExpensesQuery.isSuccess]);
+
+  // Get the active vehicle compliance
   useEffect(() => {
     if (GetComplianceDataQuery.isSuccess) {
-      console.log(GetComplianceDataQuery.data);
+      const typeIds = GetComplianceDataQuery.data.map((c) => c.type_id);
+      setActiveCompliance(typeIds);
     }
   }, [GetComplianceDataQuery.isSuccess]);
 
-  const { push } = useProgressBarNavigation();
+  useEffect(() => {
+    console.log(activeCompliance);
+  }, [activeCompliance]);
 
   const handleRetryAll = () => {
     GetVehicleQuery.refetch();
@@ -98,11 +116,7 @@ const VehicleDetailsComponent = ({
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div>
-          <Button
-            variant="ghost"
-            onClick={() => handleNavigation()}
-            className="mb-2 -ml-3"
-          >
+          <Button variant="ghost" onClick={() => back()} className="mb-2 -ml-3">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Vehicles
           </Button>
@@ -302,6 +316,7 @@ const VehicleDetailsComponent = ({
             <AddComplianceModal
               vehicleId={vehicleId}
               onClose={() => setIsAddComplianceOpen(false)}
+              activeCompliance={activeCompliance}
               setWarnDialog={() => setWarnDialog(false)}
             />
           </Dialog>

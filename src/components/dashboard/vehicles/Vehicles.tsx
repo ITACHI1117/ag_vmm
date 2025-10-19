@@ -17,7 +17,7 @@ export const VehiclesComponent = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [currentScreen, setCurrentScreen] = useState("allVehicles");
-  const [vehicleId, setVehicleId] = useState<number>(1);
+  const [vehicleId, setVehicleId] = useState<string>("1");
 
   // Get all vehicles Query
   // debounce searchTerm
@@ -28,14 +28,15 @@ export const VehiclesComponent = () => {
     GetAllVehiclesQuery.isSuccess && console.log(GetAllVehiclesQuery.data);
   }, [GetAllVehiclesQuery.isSuccess]);
 
-  const { back } = useProgressBarNavigation();
+  const { push } = useProgressBarNavigation();
 
-  const handleNavigation = () => {
-    if (currentScreen == "allVehicles") {
-      setCurrentScreen("VehicleDetail");
-    } else {
-      setCurrentScreen("allVehicles");
-    }
+  const handleNavigation = (vehicleId: string) => {
+    push(`/dashboard/vehicles/vehicle/${vehicleId}`);
+    // if (currentScreen == "allVehicles") {
+    //   setCurrentScreen("VehicleDetail");
+    // } else {
+    //   setCurrentScreen("allVehicles");
+    // }
   };
 
   const handleRetry = () => {
@@ -47,7 +48,7 @@ export const VehiclesComponent = () => {
     return (
       <VehicleDetailsComponent
         vehicleId={vehicleId}
-        handleNavigation={handleNavigation}
+        // handleNavigation={handleNavigation}
       />
     );
   }
@@ -218,7 +219,7 @@ export const VehiclesComponent = () => {
                         className="border-b border-border hover:bg-accent/50 transition-colors cursor-pointer"
                         onClick={() => {
                           setVehicleId(vehicle.id);
-                          handleNavigation();
+                          handleNavigation(vehicle.id);
                         }}
                       >
                         <td className="py-4 px-6 font-medium">
@@ -245,7 +246,7 @@ export const VehiclesComponent = () => {
                             onClick={(e) => {
                               e.stopPropagation();
                               setVehicleId(vehicle.id);
-                              handleNavigation();
+                              handleNavigation(vehicle.id);
                             }}
                           >
                             View Details

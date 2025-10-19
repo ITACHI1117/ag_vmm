@@ -1,3 +1,4 @@
+"use client";
 import { Button } from "@/components/ui/button";
 import {
   DialogContent,
@@ -31,7 +32,6 @@ import { Calendar } from "@/components/ui/calendar";
 import {
   useAddCompliance,
   useDeleteCompliance,
-  useGetComplianceByVehicleId,
   useGetComplianceTypes,
   useUploadComplianceFiles,
 } from "@/queries/compliance.queries";
@@ -49,10 +49,12 @@ import { cn } from "@/lib/utils";
 const AddComplianceModal = ({
   vehicleId,
   onClose,
+  activeCompliance,
   setWarnDialog,
 }: {
-  vehicleId?: number;
+  vehicleId?: string;
   onClose: () => void;
+  activeCompliance: any;
   setWarnDialog: () => void;
 }) => {
   // Queries
@@ -93,21 +95,9 @@ const AddComplianceModal = ({
   //   upload compliance_files query
   const UploadComplianceFilesQuery = useUploadComplianceFiles();
 
-  // get compliance by vehicle id and type id, would be used for filtering
-  const GetComplianceByVehicleId = useGetComplianceByVehicleId(
-    { vehicleId, compliance_type_value },
-    { enabled: !!vehicleId && !!compliance_type_value }
-  );
-
   useEffect(() => {
     console.log(vehicleId);
   }, []);
-  useEffect(() => {
-    if (GetComplianceByVehicleId.isSuccess) {
-      // setWarnDialog(true);
-      console.log(GetComplianceByVehicleId.data);
-    }
-  }, [GetComplianceByVehicleId.isSuccess]);
 
   useEffect(() => {
     if (GetComplianceTypesQuery.isSuccess) {
@@ -314,8 +304,10 @@ const AddComplianceModal = ({
         error: "Failed to add compliance record",
       });
 
+      // wait for the compliance record to submit to the db
       const result = await compliancePromise;
 
+      // check if there are files selected
       if (uploadedFiles.length > 0) {
         const filesToInsert = uploadedFiles.map((file) => ({
           compliance_id: result.id,
@@ -323,6 +315,7 @@ const AddComplianceModal = ({
           file_name: file.name,
         }));
 
+        // upload files url to the compliance_files table
         const uploadPromise =
           UploadComplianceFilesQuery.mutateAsync(filesToInsert);
         toast.promise(uploadPromise, {
@@ -411,7 +404,11 @@ const AddComplianceModal = ({
                       {GetComplianceTypesQuery.data &&
                         GetComplianceTypesQuery.data.length > 0 &&
                         GetComplianceTypesQuery.data.map((type) => (
-                          <SelectItem key={type.id} value={type.id}>
+                          <SelectItem
+                            disabled={activeCompliance.includes(type.id)}
+                            key={type.id}
+                            value={type.id}
+                          >
                             {type.name}
                           </SelectItem>
                         ))}
@@ -646,7 +643,12 @@ const AddComplianceModal = ({
             <Button
               type="submit"
               className="cursor-pointer"
-              disabled={AddComplianceQuery.isPending || isUploading}
+              disabled={
+                AddComplianceQuery.isPending ||
+                UploadComplianceFilesQuery.isPending ||
+                isUploading ||
+                uploadedFiles.length == 0
+              }
             >
               {AddComplianceQuery.isPending
                 ? "Adding..."

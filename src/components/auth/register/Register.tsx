@@ -117,7 +117,7 @@ const Register = () => {
       const result = await promise;
       console.log(result);
       const userId = result?.user?.id;
-      console.log(userId);
+      // console.log(userId);
 
       // Step 3: Stop immediately if no userId
       if (result?.user?.identities?.length == 0) {

@@ -78,9 +78,13 @@ export const useGetVehicleExpenses = (vehicle_id) => {
           expense_type,
           description,
           amount,
-          invoice_url,
           created_at,
-          users ( full_name )
+          users ( full_name ),
+          expenses_files (
+            id,
+      file_url,
+      file_name
+    )
         `
         )
         .eq("vehicle_id", vehicle_id)
@@ -112,6 +116,19 @@ export const useGetFewExpenses = () => {
         .limit(5);
       if (error) throw error;
       return data;
+    },
+  });
+};
+
+// upload expenses Files
+export const useUploadExpensesFiles = () => {
+  return useMutation({
+    mutationFn: async (data) => {
+      const { data: res, error } = await supabase
+        .from("expenses_files")
+        .insert(data);
+      if (error) throw error;
+      return res;
     },
   });
 };

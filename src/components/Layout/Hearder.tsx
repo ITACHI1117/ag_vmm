@@ -32,10 +32,6 @@ export const HeaderNavigation = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { user } = useAuthStore();
 
-  useEffect(() => {
-    console.log(user);
-  }, [user]);
-
   const handleLogout = async () => {
     const SignOut = await supabase.auth.signOut();
     if (SignOut.error) {
