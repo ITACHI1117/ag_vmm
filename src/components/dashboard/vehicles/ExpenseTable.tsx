@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import useProgressBarNavigation from "@/hooks/useProgressBarNavigator";
 import { MonthDayYear } from "@/lib/formatDate";
 import { AlertCircle, Eye, RefreshCw, Trash } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DocumentViewerDialog } from "./DocumentViewer";
 import {
   useDeleteExpenses,
@@ -28,6 +28,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { supabase } from "@/supabse-client";
 
 export const ExpenseTable = ({ GetVehicleExpensesQuery }) => {
   // state
@@ -36,8 +37,32 @@ export const ExpenseTable = ({ GetVehicleExpensesQuery }) => {
 
   //   delete compliance query
   const DeleteExpenses = useDeleteExpenses();
-  //  delete compliance files query
-  const DeleteExpensesFiles = useDeleteExpensesFiles();
+
+  // delete from storage
+  async function deleteComplianceFilesFromStorage(
+    vehicle_id: string,
+    expensesFiles: Array<any>
+  ) {
+    try {
+      if (!expensesFiles || expensesFiles.length === 0) return;
+      const filePaths = expensesFiles.map(
+        (file) => `invoices/${vehicle_id}/${file.file_name}`
+      );
+
+      // Delete files from Supabase Storage
+      const { error } = await supabase.storage
+        .from("invoices")
+        .remove(filePaths);
+
+      if (error) throw error;
+
+      toast.success("Expenses files deleted from storage");
+      return { success: true };
+    } catch (error: any) {
+      console.log("Error deleting expenses files from storage:", error.message);
+      return { success: false, error: error.message };
+    }
+  }
 
   const handleDelete = async (id: string) => {
     try {
@@ -46,8 +71,18 @@ export const ExpenseTable = ({ GetVehicleExpensesQuery }) => {
 
       await promise;
 
-      DeleteExpensesFiles.mutateAsync(id);
-    } catch (error) {
+      const expense = GetVehicleExpensesQuery.data.find(
+        (item) => item.id === id
+      );
+
+      if (!expense) throw new Error("Expense not found");
+
+      // delete related files from storage
+      await deleteComplianceFilesFromStorage(
+        expense.vehicle_id,
+        expense.expenses_files
+      );
+    } catch (error: any) {
       console.log(error);
       toast.error(`${error.message}`);
     }

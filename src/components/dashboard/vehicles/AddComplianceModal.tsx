@@ -74,6 +74,7 @@ const AddComplianceModal = ({
   >([]);
   const [isUploading, setIsUploading] = useState(false);
   const [complianceType, setComplianceType] = useState(false);
+  const [fileName, setFileName] = useState("");
 
   const form = useForm({
     resolver: zodResolver(addComplianceSchema),
@@ -223,7 +224,11 @@ const AddComplianceModal = ({
 
         // Add index to ensure uniqueness even if files are uploaded at exact same millisecond
         const fileName = `${sanitizedOriginalName}_${timestamp}_${index}_${randomString}.${fileExt}`;
-        const filePath = `compliance/${fileName}`;
+        const filePath = `compliance/${vehicleId}/${fileName}`;
+
+        // set the fileName state
+        // would be used to store the file name in the compliance_files table to make it easy to delete later
+        setFileName(fileName);
 
         // Upload to Supabase Storage
         const { data: uploadData, error: uploadError } = await supabase.storage
@@ -312,7 +317,7 @@ const AddComplianceModal = ({
         const filesToInsert = uploadedFiles.map((file) => ({
           compliance_id: result.id,
           file_url: file.url,
-          file_name: file.name,
+          file_name: fileName,
         }));
 
         // upload files url to the compliance_files table

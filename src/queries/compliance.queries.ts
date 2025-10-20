@@ -87,7 +87,7 @@ export const useGetVehicleCompliance = (vehicle_id) => {
             status,
             created_at,
             compliance_types ( name ),
-            vehicles (plate_number),
+            vehicles (id,plate_number),
             compliance_files (
             id,
             compliance_id,

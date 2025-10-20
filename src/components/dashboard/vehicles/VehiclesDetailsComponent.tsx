@@ -33,9 +33,6 @@ import {
   useGetVehicle,
 } from "@/queries/vehicle.queries";
 import { useGetVehicleExpenses } from "@/queries/expense.queries";
-import { useDebounce } from "@/hooks/useDebounce";
-import { Input } from "@/components/ui/input";
-import { MonthDayYear } from "@/lib/formatDate";
 import useProgressBarNavigation from "@/hooks/useProgressBarNavigator";
 import AddComplianceModal from "./AddComplianceModal";
 import { ComplianceCard } from "./ComplianceCard";

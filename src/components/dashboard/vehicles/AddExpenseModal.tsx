@@ -66,6 +66,7 @@ const AddExpenseModal = ({
   const [invoiceUrl, setInvoiceUrl] = useState<string>("");
   const [invoicePath, setInvoicePath] = useState<string>("");
   const [isUploading, setIsUploading] = useState(false);
+  const [fileName, setFileName] = useState("");
   const [uploadedFile, setUploadedFile] = useState<{
     name: string;
     type: string;
@@ -154,7 +155,11 @@ const AddExpenseModal = ({
 
         // Add index to ensure uniqueness even if files are uploaded at exact same millisecond
         const fileName = `${sanitizedOriginalName}_${timestamp}_${index}_${randomString}.${fileExt}`;
-        const filePath = `invoices/${fileName}`;
+        const filePath = `invoices/${vehicleId}/${fileName}`;
+
+        // set the fileName statestate
+        // would be used to store the file name in the compliance_files table to make it easy to delete later
+        setFileName(fileName);
 
         // Upload to Supabase Storage
         const { data: uploadData, error: uploadError } = await supabase.storage
@@ -249,7 +254,7 @@ const AddExpenseModal = ({
         const filesToInsert = uploadedFiles.map((file) => ({
           expenses_id: result.id,
           file_url: file.url,
-          file_name: file.name,
+          file_name: fileName,
         }));
 
         // upload files url to the expenses_files table

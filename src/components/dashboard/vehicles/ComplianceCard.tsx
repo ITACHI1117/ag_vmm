@@ -30,6 +30,7 @@ import {
   useDeleteComplianceFiles,
 } from "@/queries/compliance.queries";
 import { toast } from "sonner";
+import { supabase } from "@/supabse-client";
 
 // Compliance Card Component with Error Handling
 export const ComplianceCard = ({
@@ -48,40 +49,54 @@ export const ComplianceCard = ({
 
   //   delete compliance query
   const DeleteCompliance = useDeleteCompliance();
-  //  delete compliance files query
-  const DeleteComplianceFiles = useDeleteComplianceFiles();
 
   const handleDocumentClick = (document: any) => {
     setSelectedDocument(document);
     setIsViewerOpen(true);
   };
 
+  // delete from storage
+  async function deleteComplianceFilesFromStorage(vehicle_id, complianceFiles) {
+    try {
+      if (!complianceFiles || complianceFiles.length === 0) return;
+      const filePaths = complianceFiles.map(
+        (file) => `compliance/${vehicle_id}/${file.file_name}`
+      );
+
+      // Delete files from Supabase Storage
+      const { error } = await supabase.storage
+        .from("compliance_documents")
+        .remove(filePaths);
+
+      if (error) throw error;
+
+      toast.success("Compliance files deleted from storage");
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
+
   const handleDelete = async (id: string) => {
-    console.log(id);
     try {
       const promise = DeleteCompliance.mutateAsync(id);
 
       await promise;
 
-      DeleteComplianceFiles.mutateAsync(id);
+      deleteComplianceFilesFromStorage(
+        compliance.vehicles.id,
+        compliance.compliance_files
+      );
     } catch (error) {
-      console.log(error);
       toast.error(`${error.message}`);
     }
   };
 
   useEffect(() => {
-    if (DeleteCompliance.isSuccess && DeleteComplianceFiles.isSuccess) {
+    if (DeleteCompliance.isSuccess) {
       toast.success("Compliance Deleted");
     }
-  }, [DeleteComplianceFiles.isSuccess, DeleteCompliance.isSuccess]);
-
-  useEffect(() => {
-    console.log(compliance.id);
-    compliance.compliance_files.map((file) => {
-      console.log(file.compliance_id);
-    });
-  }, [compliance]);
+  }, [DeleteCompliance.isSuccess]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
