@@ -82,7 +82,7 @@ const VehicleDetailsComponent = ({
       const typeIds = GetComplianceDataQuery.data.map((c) => c.type_id);
       setActiveCompliance(typeIds);
     }
-  }, [GetComplianceDataQuery.isSuccess]);
+  }, [GetComplianceDataQuery.data]);
 
   useEffect(() => {
     console.log(activeCompliance);

@@ -1,7 +1,10 @@
 import { supabase } from "@/supabse-client";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export const useAddCompliance = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data) => {
       const { data: res, error } = await supabase
@@ -10,6 +13,7 @@ export const useAddCompliance = () => {
         .select()
         .single();
       if (error) throw error;
+      console.log(res);
       return res;
     },
   });
@@ -17,14 +21,27 @@ export const useAddCompliance = () => {
 
 // Delete compliance
 export const useDeleteCompliance = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async (compliance_id) => {
       const { data, error } = await supabase
         .from("vehicle_compliance")
         .delete()
-        .eq("id", compliance_id);
+        .eq("id", compliance_id)
+        .select()
+        .single();
       if (error) throw error;
+      console.log(data);
       return data;
+    },
+    onSuccess: async (data) => {
+      // wait a few milliseconds to ensure the database is updated
+      await new Promise((resolve) => setTimeout(resolve, 300)); // wait 300ms
+      // just refetch the compliance list for that vehicle
+      await queryClient.refetchQueries({
+        queryKey: ["get-compliance-data", data.vehicle_id],
+      });
     },
   });
 };

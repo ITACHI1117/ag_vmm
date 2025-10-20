@@ -37,6 +37,7 @@ import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import Image from "next/image";
 import { Textarea } from "@/components/ui/textarea";
+import { useQueryClient } from "@tanstack/react-query";
 
 const expenseTypes = [
   { id: 1, name: "Oil Change", value: "oil_change" },
@@ -79,6 +80,7 @@ const AddExpenseModal = ({
       path: string;
     }>
   >([]);
+  const queryClient = useQueryClient();
 
   const form = useForm({
     resolver: zodResolver(addExpenseSchema),
@@ -266,6 +268,17 @@ const AddExpenseModal = ({
           error: "Failed to upload documents",
         });
         await uploadPromise;
+
+        // ✅ Once both the compliance and files are done:
+        // refetch compliance data for the vehicle
+        // just refetch the compliance types for
+        await queryClient.refetchQueries({
+          queryKey: ["get-vehicle-expenses", result.vehicle_id],
+        });
+
+        await queryClient.refetchQueries({
+          queryKey: ["total-amount-spent-on-vehicle", result.vehicle_id],
+        });
       }
 
       handleCloseModal();

@@ -45,6 +45,7 @@ import { toast } from "sonner";
 import Image from "next/image";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { useQueryClient } from "@tanstack/react-query";
 
 const AddComplianceModal = ({
   vehicleId,
@@ -75,6 +76,7 @@ const AddComplianceModal = ({
   const [isUploading, setIsUploading] = useState(false);
   const [complianceType, setComplianceType] = useState(false);
   const [fileName, setFileName] = useState("");
+  const queryClient = useQueryClient();
 
   const form = useForm({
     resolver: zodResolver(addComplianceSchema),
@@ -323,12 +325,20 @@ const AddComplianceModal = ({
         // upload files url to the compliance_files table
         const uploadPromise =
           UploadComplianceFilesQuery.mutateAsync(filesToInsert);
+
         toast.promise(uploadPromise, {
           loading: "Uploading documents...",
           success: "Documents uploaded successfully!",
           error: "Failed to upload documents",
         });
         await uploadPromise;
+
+        // ✅ Once both the compliance and files are done:
+        // refetch compliance data for the vehicle
+        // just refetch the compliance types for
+        await queryClient.refetchQueries({
+          queryKey: ["get-compliance-data", result.vehicle_id],
+        });
       }
 
       handleCloseModal();

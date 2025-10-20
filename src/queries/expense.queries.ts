@@ -20,35 +20,6 @@ export const useAddExpenses = () => {
       if (error) throw error;
       return res;
     },
-    // Optimistic update
-    onMutate: async (newExpenses) => {
-      console.log(newExpenses);
-
-      const key = ["get-vehicle-expenses", newExpenses.vehicle_id];
-
-      await queryClient.cancelQueries({ queryKey: key });
-
-      const previousExpenses = queryClient.getQueryData(key);
-
-      // Optimistically update cache
-      queryClient.setQueryData(key, (old: any) => [
-        ...(old || []),
-        { ...newExpenses, id: Math.random().toString(), optimistic: true },
-      ]);
-
-      return { previousExpenses };
-    },
-    // ❌ Rollback if there's an error
-    onError: (err, newExpenses, context) => {
-      if (context?.previousExpenses) {
-        queryClient.setQueryData(
-          ["get-vehicle-expenses", newExpenses.vehicle_id],
-          context.previousExpenses
-        );
-      }
-      console.error("Error adding vehicle:", err.message);
-    },
-
     // ✅ On success, replace optimistic data with actual data
     onSuccess: (res) => {
       queryClient.setQueryData(["get-vehicle-expenses"], (old: any) => [
@@ -56,11 +27,6 @@ export const useAddExpenses = () => {
         res,
       ]);
       console.log("Vehicle expenses added successfully:", res);
-    },
-
-    // // 🔄 Refetch to ensure data is fully synced
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["get-vehicle-expenses"] });
     },
   });
 };
@@ -141,11 +107,25 @@ export const useDeleteExpenses = () => {
       const { data, error } = await supabase
         .from("expenses")
         .delete()
-        .eq("id", vehicle_id);
+        .eq("id", vehicle_id)
+        .select()
+        .single();
       if (error) throw error;
       return data;
     },
-    onSuccess: () => toast.success("Expense deleted"),
+    onSuccess: async (data) => {
+      console.log("Deleted expense:", data);
+      // wait a few milliseconds to ensure the database is updated
+      await new Promise((resolve) => setTimeout(resolve, 300)); // wait 300ms
+      // just refetch the compliance list for that vehicle
+      await queryClient.refetchQueries({
+        queryKey: ["get-vehicle-expenses", data.vehicle_id],
+      });
+
+      await queryClient.refetchQueries({
+        queryKey: ["total-amount-spent-on-vehicle", data.vehicle_id],
+      });
+    },
     onError: (err) => toast.error(err.message),
   });
 };
