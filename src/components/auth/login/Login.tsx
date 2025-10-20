@@ -170,7 +170,7 @@ export const LoginComponent = () => {
               </Button>
             </form>
           </FormProvider>
-          <div className="flex items-center justify-between text-sm">
+          {/* <div className="flex items-center justify-between text-sm">
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" className="rounded border-border" />
               <span className="text-muted-foreground">Remember me</span>
@@ -181,7 +181,7 @@ export const LoginComponent = () => {
             >
               Forgot Password?
             </button>
-          </div>
+          </div> */}
         </CardContent>
 
         <CardFooter className="flex flex-col gap-4">

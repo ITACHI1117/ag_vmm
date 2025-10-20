@@ -338,7 +338,7 @@ const Register = () => {
             </form>
           </FormProvider>
 
-          <div className="flex items-start gap-2 pt-2">
+          {/* <div className="flex items-start gap-2 pt-2">
             <input
               type="checkbox"
               id="terms"
@@ -358,7 +358,7 @@ const Register = () => {
                 Privacy Policy
               </span>
             </label>
-          </div>
+          </div> */}
         </CardContent>
 
         <CardFooter className="flex flex-col gap-4">
