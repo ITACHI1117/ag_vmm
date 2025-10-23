@@ -60,19 +60,16 @@ export const LoginComponent = () => {
         .eq("email", result.user?.email)
         .single();
       if (error) {
-        toast.error(`${error}`);
+        toast.error(`${error.message}`);
         return;
       }
       // store the user role
       setUser(UserData);
       toast.success(`Welcome back ${UserData.full_name}`);
       push("/dashboard/overview");
-    } catch (error) {
-      toast.error(`${error}`);
+    } catch (error: any) {
+      toast.error(`${error.message}`);
     }
-    // Add your login logic here
-    console.log("Login attempt:", { email, password });
-    push("/dashboard/overview");
   };
 
   return (
