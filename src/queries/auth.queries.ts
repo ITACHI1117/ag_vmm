@@ -9,7 +9,7 @@ export const useLogin = () => {
         data
       );
       if (error) throw error;
-      return data;
+      return UserData;
     },
   });
 };

@@ -52,6 +52,7 @@ export const LoginComponent = () => {
       });
       // await the login promise
       const result = await promise;
+      console.log(result);
       // fetch user extra information from the users table
       // we need the user role stored globally
       const { error, data: UserData } = await supabase
