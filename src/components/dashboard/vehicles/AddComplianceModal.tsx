@@ -62,9 +62,6 @@ const AddComplianceModal = ({
   // add compliance query
   const AddComplianceQuery = useAddCompliance();
 
-  //   delete compliance query
-  const DeleteCompliance = useDeleteCompliance();
-
   const [uploadedFiles, setUploadedFiles] = useState<
     Array<{
       name: string;
@@ -74,7 +71,6 @@ const AddComplianceModal = ({
     }>
   >([]);
   const [isUploading, setIsUploading] = useState(false);
-  const [complianceType, setComplianceType] = useState(false);
   const [fileName, setFileName] = useState("");
   const queryClient = useQueryClient();
 
@@ -88,8 +84,6 @@ const AddComplianceModal = ({
       status: "",
     },
   });
-
-  const compliance_type_value = form.watch("compliance_type");
 
   //   Queries
   // get compliance types

@@ -29,11 +29,15 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { supabase } from "@/supabse-client";
+import { useAuthStore } from "@/store/authStore";
 
 export const ExpenseTable = ({ GetVehicleExpensesQuery }) => {
   // state
   const [selectedDocument, setSelectedDocument] = useState();
   const [isViewerOpen, setIsViewerOpen] = useState<boolean>(false);
+
+  // global state
+  const { user } = useAuthStore();
 
   //   delete compliance query
   const DeleteExpenses = useDeleteExpenses();
@@ -87,6 +91,8 @@ export const ExpenseTable = ({ GetVehicleExpensesQuery }) => {
       toast.error(`${error.message}`);
     }
   };
+
+  const userRole = user && user.role;
 
   return (
     <>
@@ -210,27 +216,42 @@ export const ExpenseTable = ({ GetVehicleExpensesQuery }) => {
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>
-                                Are you absolutely sure?
-                              </AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This action cannot be undone. This will
-                                permanently delete this vehicle expense.
-                              </AlertDialogDescription>
+                              {userRole === "Staff" ? (
+                                <AlertDialogTitle>
+                                  Permission Denied
+                                </AlertDialogTitle>
+                              ) : (
+                                <AlertDialogTitle>
+                                  Are you absolutely sure?
+                                </AlertDialogTitle>
+                              )}
+                              {userRole === "Staff" ? (
+                                <AlertDialogDescription>
+                                  You do not have permission to delete this
+                                  vehicle information.
+                                </AlertDialogDescription>
+                              ) : (
+                                <AlertDialogDescription>
+                                  This action cannot be undone. This will
+                                  permanently delete this vehicle expense.
+                                </AlertDialogDescription>
+                              )}
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel className="cursor-pointer">
                                 Cancel
                               </AlertDialogCancel>
-                              <AlertDialogAction
-                                className="cursor-pointer"
-                                onClick={() => {
-                                  handleDelete(expense.id);
-                                  // Add delete logic here
-                                }}
-                              >
-                                Delete
-                              </AlertDialogAction>
+                              {userRole !== "Staff" && (
+                                <AlertDialogAction
+                                  className="cursor-pointer"
+                                  onClick={() => {
+                                    handleDelete(expense.id);
+                                    // Add delete logic here
+                                  }}
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              )}
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>

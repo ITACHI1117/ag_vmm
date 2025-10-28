@@ -39,6 +39,7 @@ import { ComplianceCard } from "./ComplianceCard";
 import { useGetVehicleCompliance } from "@/queries/compliance.queries";
 import { VehicleComplianceComponent } from "./VehicleComplianceCompnent";
 import { ExpenseTable } from "./ExpenseTable";
+import { useAuthStore } from "@/store/authStore";
 
 const VehicleDetailsComponent = ({
   vehicleId,

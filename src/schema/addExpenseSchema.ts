@@ -11,6 +11,11 @@ export const addExpenseSchema = z.object({
     .string()
     .trim()
     .regex(/^\d+(\.\d{1,2})?$/, "Amount must be a valid number"),
+
+  vehicle_mileage: z
+    .string()
+    .trim()
+    .regex(/^\d+(\.\d{1,2})?$/, "Millage must be a valid number"),
 });
 
 export type AddExpense = z.infer<typeof addExpenseSchema>;

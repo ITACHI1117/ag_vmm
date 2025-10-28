@@ -200,6 +200,9 @@ const RoleKeyGenerator = () => {
                   ))}
               </SelectContent>
             </Select>
+            <p className="text-xs text-red-500">
+              Please read the roles rules before assigning roles
+            </p>
             <p className="text-xs text-muted-foreground">
               The generated key will allow registration with this role
             </p>
@@ -242,7 +245,39 @@ const RoleKeyGenerator = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>How to Use</CardTitle>
+          <CardTitle>Roles Explained</CardTitle>
+          <CardDescription>
+            Please read this before assigning roles to users
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ol className="space-y-2 text-sm text-muted-foreground list-decimal list-inside">
+            <li>
+              <span className="text-primary">IT:</span> The user with the IT
+              role can generate keys for staffs to sign in to the application,
+              adn can also Create delete and update information accross the
+              application{" "}
+              <span className="text-red-500">
+                The IT admin is the super admin
+              </span>{" "}
+            </li>
+            <li>
+              <span className="text-primary">Admin:</span> The user with the
+              Admin role can create, update and delete Vehicle data across the
+              application
+            </li>
+            <li>
+              <span className="text-primary">Staff:</span>
+              The user with the Staff role can create and update Vehicle data
+              but is restricted to deleting data
+            </li>
+          </ol>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>How to use the Key Generator</CardTitle>
         </CardHeader>
         <CardContent>
           <ol className="space-y-2 text-sm text-muted-foreground list-decimal list-inside">

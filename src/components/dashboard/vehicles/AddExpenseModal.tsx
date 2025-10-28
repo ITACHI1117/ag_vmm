@@ -88,6 +88,7 @@ const AddExpenseModal = ({
       expense_type: "",
       description: "",
       amount: "",
+      vehicle_millage: "",
     },
   });
 
@@ -355,6 +356,25 @@ const AddExpenseModal = ({
                   <Input
                     type="number"
                     placeholder="15000"
+                    {...field}
+                    className="w-full"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            name="vehicle_mileage"
+            control={form.control}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Vehicle Mileage</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    placeholder="5000"
                     {...field}
                     className="w-full"
                   />

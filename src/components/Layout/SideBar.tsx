@@ -1,21 +1,11 @@
 "use client";
-import {
-  Bell,
-  Car,
-  FileText,
-  Folder,
-  LayoutDashboard,
-  Settings,
-  Shield,
-} from "lucide-react";
+import { Car, LayoutDashboard, Settings, Shield } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { Button } from "../ui/button";
 import useProgressBarNavigation from "@/hooks/useProgressBarNavigator";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/authStore";
-import { useEffect } from "react";
 import { Badge } from "../ui/badge";
-import { toast } from "sonner";
 
 export const Sidebar = ({
   setIsOpen,
@@ -52,12 +42,12 @@ export const Sidebar = ({
     //   href: "/dashboard/documents",
     //   icon: Folder,
     // },
-    {
-      title: "Notifications",
-      href: "/dashboard/notifications",
-      icon: Bell,
-      isComingSoon: true,
-    },
+    // {
+    //   title: "Notifications",
+    //   href: "/dashboard/notifications",
+    //   icon: Bell,
+    //   isComingSoon: true,
+    // },
     // {
     //   title: "Settings",
     //   href: "/dashboard/settings",
