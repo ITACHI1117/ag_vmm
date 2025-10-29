@@ -1,5 +1,5 @@
 "use client";
-import { Car, LayoutDashboard, Settings, Shield } from "lucide-react";
+import { Car, FileText, LayoutDashboard, Settings, Shield } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { Button } from "../ui/button";
 import useProgressBarNavigation from "@/hooks/useProgressBarNavigator";
@@ -27,11 +27,11 @@ export const Sidebar = ({
       href: "/dashboard/vehicles",
       icon: Car,
     },
-    // {
-    //   title: "Reports",
-    //   href: "/dashboard/reports",
-    //   icon: FileText,
-    // },
+    {
+      title: "Compliance History",
+      href: "/dashboard/compliance-history",
+      icon: FileText,
+    },
     {
       title: "Generate Role Key",
       href: "/dashboard/generate-role-key",
@@ -80,7 +80,8 @@ export const Sidebar = ({
           const Icon = item.icon;
           const isActive = pathname === item.href;
           if (
-            item.href == "/dashboard/generate-role-key" &&
+            (item.href == "/dashboard/generate-role-key" ||
+              item.href == "/dashboard/compliance-history") &&
             user &&
             user.role != "IT"
           ) {

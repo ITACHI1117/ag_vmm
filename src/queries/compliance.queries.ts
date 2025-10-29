@@ -150,3 +150,74 @@ export const useGetComplianceFiles = (vehicle_compliance_id) => {
 //     },
 //   });
 // };
+
+// Get all vehicle compliance history
+export const useGetAllVehiclesComplianceHistory = (search) => {
+  return useQuery({
+    queryKey: ["get-compliance-history", search],
+    queryFn: async () => {
+      if (!search || search == "") {
+        const { data, error } = await supabase
+          .from("vehicle_compliance_history_view")
+          .select(
+            `
+             id,
+    type_id,
+    document_number,
+    issue_date,
+    expiry_date,
+    status,
+    created_at,
+    last_reminder_sent,
+    deleted_at,
+    compliance_type_name,
+    plate_number,
+    compliance_files (
+      id,
+      compliance_id,
+      file_url,
+      file_name
+    )
+            `
+          )
+          .order("created_at", { ascending: true });
+
+        if (error) throw error;
+        return data;
+      } else {
+        // Search functionality
+        // This sql query search and returns plate number or make or model thats like the searchTerm
+        const { data, error } = await supabase
+          .from("vehicle_compliance_history_view")
+          .select(
+            `
+            id,
+    type_id,
+    document_number,
+    issue_date,
+    expiry_date,
+    status,
+    created_at,
+    last_reminder_sent,
+    deleted_at,
+    compliance_type_name,
+    plate_number,
+    compliance_files (
+      id,
+      compliance_id,
+      file_url,
+      file_name
+    )
+            `
+          )
+          .or(
+            `document_number.ilike.%${search}%,status.ilike.%${search}%,plate_number.ilike.%${search}%,compliance_type_name.ilike.%${search}%`
+          )
+          .order("created_at", { ascending: true });
+
+        if (error) throw error;
+        return data;
+      }
+    },
+  });
+};

@@ -128,7 +128,7 @@ export const DocumentViewerDialog = ({
             <div className="relative w-full h-full flex items-center justify-center p-4">
               <Image
                 src={currentDoc.file_url}
-                alt={currentDoc.name}
+                alt={currentDoc.name || currentDoc.file_name}
                 width={800}
                 height={600}
                 className="max-w-full max-h-full object-contain"
