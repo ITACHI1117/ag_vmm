@@ -48,7 +48,6 @@ const expenseTypes = [
   { id: 5, name: "Battery", value: "battery" },
   { id: 6, name: "Maintenance", value: "maintenance" },
   { id: 7, name: "Fuel", value: "fuel" },
-  { id: 8, name: "Insurance", value: "insurance" },
   { id: 9, name: "Other", value: "other" },
 ];
 
