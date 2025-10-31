@@ -13,7 +13,6 @@ export const useAddCompliance = () => {
         .select()
         .single();
       if (error) throw error;
-      console.log(res);
       return res;
     },
   });
@@ -27,12 +26,11 @@ export const useDeleteCompliance = () => {
     mutationFn: async (compliance_id) => {
       const { data, error } = await supabase
         .from("vehicle_compliance")
-        .delete()
+        .update({ deleted_at: new Date().toISOString() })
         .eq("id", compliance_id)
         .select()
         .single();
       if (error) throw error;
-      console.log(data);
       return data;
     },
     onSuccess: async (data) => {
@@ -113,7 +111,8 @@ export const useGetVehicleCompliance = (vehicle_id) => {
     )
             `
         )
-        .eq("vehicle_id", vehicle_id);
+        .eq("vehicle_id", vehicle_id)
+        .is("deleted_at", null);
 
       if (error) throw error;
       return data;
@@ -158,27 +157,22 @@ export const useGetAllVehiclesComplianceHistory = (search) => {
     queryFn: async () => {
       if (!search || search == "") {
         const { data, error } = await supabase
-          .from("vehicle_compliance_history_view")
+          .from("vehicle_compliance_view")
           .select(
             `
-             id,
-    type_id,
-    document_number,
-    issue_date,
-    expiry_date,
-    status,
-    created_at,
-    last_reminder_sent,
-    deleted_at,
-    compliance_type_name,
-    plate_number,
-    compliance_files (
-      id,
-      compliance_id,
-      file_url,
-      file_name
-    )
-            `
+  id,
+  type_id,
+  document_number,
+  issue_date,
+  expiry_date,
+  status,
+  created_at,
+  last_reminder_sent,
+  deleted_at,
+  compliance_type_name,
+  plate_number,
+  files
+`
           )
           .order("created_at", { ascending: true });
 
@@ -188,27 +182,22 @@ export const useGetAllVehiclesComplianceHistory = (search) => {
         // Search functionality
         // This sql query search and returns plate number or make or model thats like the searchTerm
         const { data, error } = await supabase
-          .from("vehicle_compliance_history_view")
+          .from("vehicle_compliance_view")
           .select(
             `
-            id,
-    type_id,
-    document_number,
-    issue_date,
-    expiry_date,
-    status,
-    created_at,
-    last_reminder_sent,
-    deleted_at,
-    compliance_type_name,
-    plate_number,
-    compliance_files (
-      id,
-      compliance_id,
-      file_url,
-      file_name
-    )
-            `
+  id,
+  type_id,
+  document_number,
+  issue_date,
+  expiry_date,
+  status,
+  created_at,
+  last_reminder_sent,
+  deleted_at,
+  compliance_type_name,
+  plate_number,
+  files
+`
           )
           .or(
             `document_number.ilike.%${search}%,status.ilike.%${search}%,plate_number.ilike.%${search}%,compliance_type_name.ilike.%${search}%`

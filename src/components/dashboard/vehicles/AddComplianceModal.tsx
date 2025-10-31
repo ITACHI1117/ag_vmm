@@ -46,6 +46,7 @@ import Image from "next/image";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
+import { compressImage } from "@/utils/imageCompressor";
 
 const AddComplianceModal = ({
   vehicleId,
@@ -91,16 +92,6 @@ const AddComplianceModal = ({
 
   //   upload compliance_files query
   const UploadComplianceFilesQuery = useUploadComplianceFiles();
-
-  useEffect(() => {
-    console.log(vehicleId);
-  }, []);
-
-  useEffect(() => {
-    if (GetComplianceTypesQuery.isSuccess) {
-      console.log(GetComplianceTypesQuery.data);
-    }
-  }, [GetComplianceTypesQuery.isSuccess]);
 
   // Calculate status based on dates
   const calculateStatus = (issueDate: string, expiryDate: string): string => {
@@ -209,11 +200,14 @@ const AddComplianceModal = ({
           id: `upload-${file.name}`,
         });
 
+        // compress file
+        const compressedFile = await compressImage(file);
+
         // Generate unique file path
-        const fileExt = file.name.split(".").pop();
+        const fileExt = compressedFile.name.split(".").pop();
         const timestamp = Date.now();
         const randomString = Math.random().toString(36).substring(2, 15);
-        const sanitizedOriginalName = file.name
+        const sanitizedOriginalName = compressedFile.name
           .replace(/\.[^/.]+$/, "")
           .replace(/[^a-z0-9]/gi, "_")
           .substring(0, 50);
@@ -229,7 +223,7 @@ const AddComplianceModal = ({
         // Upload to Supabase Storage
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from("compliance_documents")
-          .upload(filePath, file, {
+          .upload(filePath, compressedFile, {
             cacheControl: "3600",
             upsert: false,
           });
@@ -246,16 +240,19 @@ const AddComplianceModal = ({
         });
 
         return {
-          name: file.name,
-          type: file.type,
+          name: compressedFile.name,
+          type: compressedFile.type,
           url: urlData.publicUrl,
           path: filePath,
         };
       } catch (error: any) {
         console.error("Upload error:", error);
-        toast.error(error.message || `Failed to upload ${file.name}`, {
-          id: `upload-${file.name}`,
-        });
+        toast.error(
+          error.message || `Failed to upload ${compressedFile.name}`,
+          {
+            id: `upload-${compressedFile.name}`,
+          }
+        );
         return null;
       }
     });
@@ -287,8 +284,6 @@ const AddComplianceModal = ({
   };
 
   const handleSubmit = async (data: any) => {
-    console.log(data); // run a check to see if the selected compliance type already exists
-
     try {
       const { compliance_type, ...rest } = data;
       const complianceData = {

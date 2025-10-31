@@ -52,12 +52,6 @@ const Register = () => {
   // update role key query
   const UpdateRoleKeyQuery = useUpdateRoleKey();
 
-  useEffect(() => {
-    if (GetActiveKey.isSuccess) {
-      console.log(GetActiveKey.data);
-    }
-  }, [GetActiveKey.isSuccess]);
-
   // useEffect(() => {
   //   if (GetActiveKey.isSuccess) {
   //     UpdateRoleKeyQuery.mutateAsync({
@@ -84,7 +78,6 @@ const Register = () => {
     if (GetActiveKey.data && GetActiveKey.data.length == 0) {
       return false;
     }
-    console.log(GetActiveKey.data);
     if (GetActiveKey.data && GetActiveKey.data[0].role_key === key) {
       return true;
     } else {
@@ -93,8 +86,6 @@ const Register = () => {
   }
 
   const handleRegister = async (data) => {
-    console.log("Registration data:", data);
-
     // Step 1: Validate role key
     const isValidKey = ValidateRoleKey(data.roleKey);
     if (!isValidKey) {
@@ -115,9 +106,7 @@ const Register = () => {
       });
 
       const result = await promise;
-      console.log(result);
       const userId = result?.user?.id;
-      // console.log(userId);
 
       // Step 3: Stop immediately if no userId
       if (result?.user?.identities?.length == 0) {

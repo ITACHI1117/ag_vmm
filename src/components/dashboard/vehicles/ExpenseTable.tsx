@@ -36,6 +36,10 @@ export const ExpenseTable = ({ GetVehicleExpensesQuery }) => {
   const [selectedDocument, setSelectedDocument] = useState();
   const [isViewerOpen, setIsViewerOpen] = useState<boolean>(false);
 
+  useEffect(() => {
+    console.log(GetVehicleExpensesQuery.data);
+  }, [GetVehicleExpensesQuery.isSuccess]);
+
   // global state
   const { user } = useAuthStore();
 
@@ -63,14 +67,12 @@ export const ExpenseTable = ({ GetVehicleExpensesQuery }) => {
       toast.success("Expenses files deleted from storage");
       return { success: true };
     } catch (error: any) {
-      console.log("Error deleting expenses files from storage:", error.message);
       return { success: false, error: error.message };
     }
   }
 
   const handleDelete = async (id: string) => {
     try {
-      console.log(id);
       const promise = DeleteExpenses.mutateAsync(id);
 
       await promise;
@@ -87,7 +89,6 @@ export const ExpenseTable = ({ GetVehicleExpensesQuery }) => {
         expense.expenses_files
       );
     } catch (error: any) {
-      console.log(error);
       toast.error(`${error.message}`);
     }
   };
@@ -117,6 +118,9 @@ export const ExpenseTable = ({ GetVehicleExpensesQuery }) => {
                   </th>
                   <th className="text-left py-3 px-4 font-medium text-sm">
                     Amount
+                  </th>
+                  <th className="text-left py-3 px-4 font-medium text-sm">
+                    Millage
                   </th>
                   <th className="text-left py-3 px-4 font-medium text-sm">
                     Description
@@ -191,6 +195,9 @@ export const ExpenseTable = ({ GetVehicleExpensesQuery }) => {
                         ₦{expense.amount.toLocaleString()}
                       </td>
                       <td className="py-3 px-4 text-sm">
+                        {expense.vehicle_mileage.toLocaleString()}
+                      </td>
+                      <td className="py-3 px-4 text-sm">
                         {expense.description || "—"}
                       </td>
                       <td className="py-3 px-4 text-sm">
@@ -198,7 +205,6 @@ export const ExpenseTable = ({ GetVehicleExpensesQuery }) => {
                           variant="ghost"
                           size="sm"
                           onClick={() => {
-                            console.log(expense.expenses_files);
                             setSelectedDocument(expense.expenses_files);
                             setIsViewerOpen(true);
                           }}

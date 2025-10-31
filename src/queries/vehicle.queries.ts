@@ -47,7 +47,6 @@ export const useAddVehicle = () => {
         ...(old?.filter((v: any) => !v.optimistic) || []),
         res,
       ]);
-      console.log("Vehicle added successfully:", res);
     },
 
     // 🔄 Refetch to ensure data is fully synced

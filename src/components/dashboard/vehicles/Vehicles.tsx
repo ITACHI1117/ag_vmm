@@ -24,10 +24,6 @@ export const VehiclesComponent = () => {
   const debounceSearchTerm = useDebounce(searchTerm, 500);
   const GetAllVehiclesQuery = useGetAllVehicles(debounceSearchTerm);
 
-  useEffect(() => {
-    GetAllVehiclesQuery.isSuccess && console.log(GetAllVehiclesQuery.data);
-  }, [GetAllVehiclesQuery.isSuccess]);
-
   const { push } = useProgressBarNavigation();
 
   const handleNavigation = (vehicleId: string) => {

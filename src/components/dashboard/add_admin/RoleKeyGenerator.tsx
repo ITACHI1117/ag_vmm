@@ -52,14 +52,12 @@ const RoleKeyGenerator = () => {
   useEffect(() => {
     if (GetActiveKeyQuery.isSuccess) {
       if (GetActiveKeyQuery.data.length > 0) {
-        console.log(GetActiveKeyQuery.data[0].role_key);
         setCurrentKey(GetActiveKeyQuery.data[0].role_key);
         setKeyBorderColor("green");
       } else {
         setCurrentKey("No active key");
         setKeyBorderColor("red");
       }
-      console.log(GetActiveKeyQuery.data);
     }
   }, [GetActiveKeyQuery.isSuccess]);
 

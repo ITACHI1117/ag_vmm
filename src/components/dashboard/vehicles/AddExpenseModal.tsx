@@ -38,6 +38,7 @@ import { toast } from "sonner";
 import Image from "next/image";
 import { Textarea } from "@/components/ui/textarea";
 import { useQueryClient } from "@tanstack/react-query";
+import { compressImage } from "@/utils/imageCompressor";
 
 const expenseTypes = [
   { id: 1, name: "Oil Change", value: "oil_change" },
@@ -147,11 +148,14 @@ const AddExpenseModal = ({
           id: `upload-${file.name}`,
         });
 
+        // compress file
+        const compressedFile = await compressImage(file);
+
         // Generate unique file path
-        const fileExt = file.name.split(".").pop();
+        const fileExt = compressedFile.name.split(".").pop();
         const timestamp = Date.now();
         const randomString = Math.random().toString(36).substring(2, 15);
-        const sanitizedOriginalName = file.name
+        const sanitizedOriginalName = compressedFile.name
           .replace(/\.[^/.]+$/, "")
           .replace(/[^a-z0-9]/gi, "_")
           .substring(0, 50);
@@ -167,7 +171,7 @@ const AddExpenseModal = ({
         // Upload to Supabase Storage
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from("invoices")
-          .upload(filePath, file, {
+          .upload(filePath, compressedFile, {
             cacheControl: "3600",
             upsert: false,
           });
@@ -179,13 +183,13 @@ const AddExpenseModal = ({
           .from("invoices")
           .getPublicUrl(filePath);
 
-        toast.success(`${file.name} uploaded successfully!`, {
-          id: `upload-${file.name}`,
+        toast.success(`${compressedFile.name} uploaded successfully!`, {
+          id: `upload-${compressedFile.name}`,
         });
 
         return {
-          name: file.name,
-          type: file.type,
+          name: compressedFile.name,
+          type: compressedFile.type,
           url: urlData.publicUrl,
           path: filePath,
         };

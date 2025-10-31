@@ -63,12 +63,6 @@ export const Dashboard = () => {
     GetFewExpenses.refetch();
   };
 
-  useEffect(() => {
-    if (GetFewExpenses.isSuccess) {
-      console.log(GetFewExpenses.data);
-    }
-  }, [GetFewExpenses.isSuccess]);
-
   return (
     <div className="min-h-screen bg-background p-4 md:p-6 lg:p-8 w-full ">
       <div className="space-y-6">

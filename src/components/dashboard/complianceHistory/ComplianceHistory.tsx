@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useAuthStore } from "@/store/authStore";
 import { DocumentViewerDialog } from "../vehicles/DocumentViewer";
+import { toast } from "sonner";
 
 export const ComplianceHistory = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -46,11 +47,6 @@ export const ComplianceHistory = () => {
   const GetVehiclesComplianceHistory =
     useGetAllVehiclesComplianceHistory(debounceSearchTerm);
 
-  useEffect(() => {
-    GetVehiclesComplianceHistory.isSuccess &&
-      console.log(GetVehiclesComplianceHistory.data);
-  }, [GetVehiclesComplianceHistory.isSuccess]);
-
   const { push } = useProgressBarNavigation();
 
   const handleNavigation = (vehicleId: string) => {
@@ -66,6 +62,17 @@ export const ComplianceHistory = () => {
     console.log("retrying");
     GetVehiclesComplianceHistory.refetch();
   };
+
+  function handleViewFiles(vehicle) {
+    vehicle.files.map((file) => {
+      if (!file.file_url || !file.file_name) {
+        toast.error("Cant find files for this Compliance");
+      } else {
+        setSelectedDocument(vehicle.files);
+        setIsViewerOpen(true);
+      }
+    });
+  }
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-6 lg:p-8">
@@ -283,15 +290,12 @@ export const ComplianceHistory = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => {
-                              console.log(vehicle.compliance_files);
-                              setSelectedDocument(vehicle.compliance_files);
-                              setIsViewerOpen(true);
-                            }}
+                            onClick={() => handleViewFiles(vehicle)}
                           >
                             <Eye className="h-4 w-4 mr-1" />
                           </Button>
-                          <AlertDialog>
+                          {/* removed delete button for now */}
+                          {/* <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button
                                 variant={"ghost"}
@@ -340,7 +344,7 @@ export const ComplianceHistory = () => {
                                 )}
                               </AlertDialogFooter>
                             </AlertDialogContent>
-                          </AlertDialog>
+                          </AlertDialog> */}
                           {/* <Button
                           variant="ghost"
                           size="sm"
@@ -360,7 +364,7 @@ export const ComplianceHistory = () => {
       </div>
       {selectedDocument && (
         <DocumentViewerDialog
-          document={selectedDocument[0]}
+          document={selectedDocument[0] ? selectedDocument[0] : []}
           isOpen={isViewerOpen}
           onClose={() => {
             setIsViewerOpen(false);

@@ -35,8 +35,8 @@ export const DocumentViewerDialog = ({
 
   const currentDoc = allDocuments[currentIndex];
   const fileName = currentDoc.file_name;
-  const isImage =
-    fileName.endsWith(".jpg") ||
+  const isImage = fileName;
+  fileName.endsWith(".jpg") ||
     fileName.endsWith(".jpeg") ||
     fileName.endsWith(".png") ||
     fileName.endsWith(".PNG");

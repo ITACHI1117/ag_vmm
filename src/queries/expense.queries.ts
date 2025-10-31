@@ -10,7 +10,6 @@ export const useAddExpenses = () => {
   //   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data) => {
-      //   console.log(data);
       const { data: res, error } = await supabase
         .from("expenses")
         .insert(data)
@@ -26,7 +25,6 @@ export const useAddExpenses = () => {
         ...(old?.filter((v: any) => !v.optimistic) || []),
         res,
       ]);
-      console.log("Vehicle expenses added successfully:", res);
     },
   });
 };
@@ -45,6 +43,7 @@ export const useGetVehicleExpenses = (vehicle_id) => {
           expense_type,
           description,
           amount,
+          vehicle_mileage,
           created_at,
           users ( full_name ),
           expenses_files (
@@ -114,7 +113,6 @@ export const useDeleteExpenses = () => {
       return data;
     },
     onSuccess: async (data) => {
-      console.log("Deleted expense:", data);
       // wait a few milliseconds to ensure the database is updated
       await new Promise((resolve) => setTimeout(resolve, 300)); // wait 300ms
       // just refetch the compliance list for that vehicle

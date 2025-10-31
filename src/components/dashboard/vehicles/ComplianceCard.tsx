@@ -56,37 +56,44 @@ export const ComplianceCard = ({
   };
 
   // delete from storage
-  async function deleteComplianceFilesFromStorage(vehicle_id, complianceFiles) {
-    try {
-      if (!complianceFiles || complianceFiles.length === 0) return;
-      const filePaths = complianceFiles.map(
-        (file) => `compliance/${vehicle_id}/${file.file_name}`
-      );
+  // not deleting compliance file from storage for history purpose
+  // async function deleteComplianceFilesFromStorage(vehicle_id, complianceFiles) {
+  //   try {
+  //     if (!complianceFiles || complianceFiles.length === 0) return;
+  //     const filePaths = complianceFiles.map(
+  //       (file) => `compliance/${vehicle_id}/${file.file_name}`
+  //     );
 
-      // Delete files from Supabase Storage
-      const { error } = await supabase.storage
-        .from("compliance_documents")
-        .remove(filePaths);
+  //     // Delete files from Supabase Storage
+  //     const { error } = await supabase.storage
+  //       .from("compliance_documents")
+  //       .remove(filePaths);
 
-      if (error) throw error;
+  //     if (error) throw error;
 
-      toast.success("Compliance files deleted from storage");
-      return { success: true };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
-  }
+  //     toast.success("Compliance files deleted from storage");
+  //     return { success: true };
+  //   } catch (error) {
+  //     return { success: false, error: error.message };
+  //   }
+  // }
 
   const handleDelete = async (id: string) => {
     try {
       const promise = DeleteCompliance.mutateAsync(id);
 
-      await promise;
+      toast.promise(promise, {
+        loading: "Deleting Compliance Record",
+        success: "Compliance Record Deleted",
+        error: "There was an error while trying to delete this record",
+      });
 
-      deleteComplianceFilesFromStorage(
-        compliance.vehicles.id,
-        compliance.compliance_files
-      );
+      // await promise;
+
+      // deleteComplianceFilesFromStorage(
+      //   compliance.vehicles.id,
+      //   compliance.compliance_files
+      // );
     } catch (error) {
       toast.error(`${error.message}`);
     }

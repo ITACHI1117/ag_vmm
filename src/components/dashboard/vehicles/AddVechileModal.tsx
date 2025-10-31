@@ -55,7 +55,6 @@ export const AddVehicleModal = ({ onClose }: { onClose: () => void }) => {
     });
     // wait for promise to finish before closing modal
     const result = await promise;
-    console.log(result.message);
 
     form.reset();
     onClose();
@@ -70,7 +69,6 @@ export const AddVehicleModal = ({ onClose }: { onClose: () => void }) => {
   useEffect(() => {
     if (AddVehicleQuery.isError) {
       toast.error(`${AddVehicleQuery.error.message}`);
-      console.log(AddVehicleQuery.error);
     }
   }, [AddVehicleQuery.isError]);
 

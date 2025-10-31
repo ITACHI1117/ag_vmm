@@ -69,14 +69,6 @@ const VehicleDetailsComponent = ({
   // Get Compliance Data
   const GetComplianceDataQuery = useGetVehicleCompliance(vehicleId);
 
-  // Get Expenses Files
-
-  useEffect(() => {
-    if (GetVehicleExpensesQuery.isSuccess) {
-      console.log(GetVehicleExpensesQuery.data);
-    }
-  }, [GetVehicleExpensesQuery.isSuccess]);
-
   // Get the active vehicle compliance
   useEffect(() => {
     if (GetComplianceDataQuery.isSuccess) {
@@ -84,10 +76,6 @@ const VehicleDetailsComponent = ({
       setActiveCompliance(typeIds);
     }
   }, [GetComplianceDataQuery.data]);
-
-  useEffect(() => {
-    console.log(activeCompliance);
-  }, [activeCompliance]);
 
   const handleRetryAll = () => {
     GetVehicleQuery.refetch();
