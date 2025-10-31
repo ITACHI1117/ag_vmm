@@ -46,48 +46,52 @@ export const ExpenseTable = ({ GetVehicleExpensesQuery }) => {
   //   delete compliance query
   const DeleteExpenses = useDeleteExpenses();
 
-  // delete from storage
-  async function deleteComplianceFilesFromStorage(
-    vehicle_id: string,
-    expensesFiles: Array<any>
-  ) {
-    try {
-      if (!expensesFiles || expensesFiles.length === 0) return;
-      const filePaths = expensesFiles.map(
-        (file) => `invoices/${vehicle_id}/${file.file_name}`
-      );
+  // delete from
+  // not deleting files from storage for history purposes
+  // async function deleteComplianceFilesFromStorage(
+  //   vehicle_id: string,
+  //   expensesFiles: Array<any>
+  // ) {
+  //   try {
+  //     if (!expensesFiles || expensesFiles.length === 0) return;
+  //     const filePaths = expensesFiles.map(
+  //       (file) => `invoices/${vehicle_id}/${file.file_name}`
+  //     );
 
-      // Delete files from Supabase Storage
-      const { error } = await supabase.storage
-        .from("invoices")
-        .remove(filePaths);
+  //     // Delete files from Supabase Storage
+  //     const { error } = await supabase.storage
+  //       .from("invoices")
+  //       .remove(filePaths);
 
-      if (error) throw error;
+  //     if (error) throw error;
 
-      toast.success("Expenses files deleted from storage");
-      return { success: true };
-    } catch (error: any) {
-      return { success: false, error: error.message };
-    }
-  }
+  //     toast.success("Expenses files deleted from storage");
+  //     return { success: true };
+  //   } catch (error: any) {
+  //     return { success: false, error: error.message };
+  //   }
+  // }
 
   const handleDelete = async (id: string) => {
     try {
       const promise = DeleteExpenses.mutateAsync(id);
-
+      toast.promise(promise, {
+        loading: "Deleting Expense Record",
+        success: "Expense Record Deleted",
+      });
       await promise;
 
-      const expense = GetVehicleExpensesQuery.data.find(
-        (item) => item.id === id
-      );
+      // const expense = GetVehicleExpensesQuery.data.find(
+      //   (item) => item.id === id
+      // );
 
-      if (!expense) throw new Error("Expense not found");
+      // if (!expense) throw new Error("Expense not found");
 
       // delete related files from storage
-      await deleteComplianceFilesFromStorage(
-        expense.vehicle_id,
-        expense.expenses_files
-      );
+      // await deleteComplianceFilesFromStorage(
+      //   expense.vehicle_id,
+      //   expense.expenses_files
+      // );
     } catch (error: any) {
       toast.error(`${error.message}`);
     }

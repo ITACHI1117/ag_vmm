@@ -33,6 +33,11 @@ export const Sidebar = ({
       icon: FileText,
     },
     {
+      title: "Expenses History",
+      href: "/dashboard/expenses-history",
+      icon: FileText,
+    },
+    {
       title: "Generate Role Key",
       href: "/dashboard/generate-role-key",
       icon: Settings,
@@ -79,12 +84,16 @@ export const Sidebar = ({
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
-          if (
-            (item.href == "/dashboard/generate-role-key" ||
-              item.href == "/dashboard/compliance-history") &&
-            user &&
-            user.role != "IT"
-          ) {
+          const StaffRoleRestriction =
+            item.href == "/dashboard/compliance-history" ||
+            item.href == "/dashboard/expenses-history";
+
+          const IT_ONLY = item.href == "/dashboard/generate-role-key";
+
+          if (StaffRoleRestriction && user && user.role == "Staff") {
+            return;
+          }
+          if (IT_ONLY && user && user.role != "IT") {
             return;
           }
 

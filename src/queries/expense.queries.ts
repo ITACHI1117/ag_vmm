@@ -54,6 +54,7 @@ export const useGetVehicleExpenses = (vehicle_id) => {
         `
         )
         .eq("vehicle_id", vehicle_id)
+        .is("deleted_at", null)
         .order("created_at", { ascending: true });
       const { data, error } = await query;
       if (error) throw error;
@@ -79,6 +80,7 @@ export const useGetFewExpenses = () => {
           `
         )
         .order("created_at", { ascending: true })
+        .is("deleted_at", null)
         .limit(5);
       if (error) throw error;
       return data;
@@ -103,9 +105,10 @@ export const useUploadExpensesFiles = () => {
 export const useDeleteExpenses = () => {
   return useMutation({
     mutationFn: async (vehicle_id) => {
+      console.log(vehicle_id);
       const { data, error } = await supabase
         .from("expenses")
-        .delete()
+        .update({ deleted_at: new Date().toISOString() })
         .eq("id", vehicle_id)
         .select()
         .single();
@@ -141,5 +144,60 @@ export const useDeleteExpensesFiles = () => {
     },
     onSuccess: () => toast.success("Expense Files deleted"),
     onError: (err) => toast.error(err.message),
+  });
+};
+
+// Get all the expenses for history purposes
+export const useGetAllVehiclesExpensesHistory = (search) => {
+  return useQuery({
+    queryKey: ["get-expenses-history", search],
+    queryFn: async () => {
+      if (!search || search == "") {
+        const { data, error } = await supabase
+          .from("expenses_view")
+          .select(
+            `
+  id,
+  expense_type,
+  amount,
+  vehicle_mileage,
+  description,
+  created_at,
+  deleted_at,
+  plate_number,
+  files
+`
+          )
+          .order("created_at", { ascending: true });
+
+        if (error) throw error;
+        return data;
+      } else {
+        // Search functionality
+        // This sql query search and returns plate number or make or model thats like the searchTerm
+        const { data, error } = await supabase
+          .from("expenses_view")
+          .select(
+            `
+ id,
+  expense_type,
+  amount,
+  vehicle_mileage,
+  description,
+  created_at,
+  deleted_at,
+  plate_number,
+  files
+`
+          )
+          .or(
+            `plate_number.ilike.%${search}%,expense_type.ilike.%${search}%,description.ilike.%${search}%`
+          )
+          .order("created_at", { ascending: true });
+
+        if (error) throw error;
+        return data;
+      }
+    },
   });
 };

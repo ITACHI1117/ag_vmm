@@ -2,13 +2,12 @@
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import useProgressBarNavigation from "@/hooks/useProgressBarNavigator";
 import { Search, AlertCircle, RefreshCw, Eye, Trash } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useGetAllVehicles } from "@/queries/vehicle.queries";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useGetAllVehiclesComplianceHistory } from "@/queries/compliance.queries";
@@ -26,8 +25,9 @@ import {
 import { useAuthStore } from "@/store/authStore";
 import { DocumentViewerDialog } from "../vehicles/DocumentViewer";
 import { toast } from "sonner";
+import { useGetAllVehiclesExpensesHistory } from "@/queries/expense.queries";
 
-export const ComplianceHistory = () => {
+export const ExpensesHistory = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [currentScreen, setCurrentScreen] = useState("allVehicles");
@@ -40,12 +40,12 @@ export const ComplianceHistory = () => {
 
   const userRole = user && user.role;
 
-  // Get all vehicles compliance history
+  // Get all vehicles expenses history
   // debounce searchTerm
   const debounceSearchTerm = useDebounce(searchTerm, 500);
   const GetAllVehiclesQuery = useGetAllVehicles(debounceSearchTerm);
-  const GetVehiclesComplianceHistory =
-    useGetAllVehiclesComplianceHistory(debounceSearchTerm);
+  const GetVehiclesExpensesHistory =
+    useGetAllVehiclesExpensesHistory(debounceSearchTerm);
 
   const { push } = useProgressBarNavigation();
 
@@ -60,15 +60,15 @@ export const ComplianceHistory = () => {
 
   const handleRetry = () => {
     console.log("retrying");
-    GetVehiclesComplianceHistory.refetch();
+    GetVehiclesExpensesHistory.refetch();
   };
 
-  function handleViewFiles(vehicle) {
-    vehicle.files.map((file) => {
+  function handleViewFiles(expense) {
+    expense.files.map((file) => {
       if (!file.file_url || !file.file_name) {
-        toast.error("Cant find files for this Compliance");
+        toast.error("Cant find files for this Expense");
       } else {
-        setSelectedDocument(vehicle.files);
+        setSelectedDocument(expense.files);
         setIsViewerOpen(true);
       }
     });
@@ -80,21 +80,21 @@ export const ComplianceHistory = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold">Compliance History</h1>
+            <h1 className="text-3xl font-bold">Expenses History</h1>
             <p className="text-muted-foreground mt-1">
-              Compliance for all vehicles
+              Expenses for all vehicles
             </p>
           </div>
         </div>
 
         {/* Error Alert */}
-        {GetVehiclesComplianceHistory.isError && (
+        {GetVehiclesExpensesHistory.isError && (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Error Loading Compliance</AlertTitle>
+            <AlertTitle>Error Loading Expenses</AlertTitle>
             <AlertDescription className="flex items-center justify-between">
               <span>
-                There was a problem loading the compliance. Please try again.
+                There was a problem loading the expenses. Please try again.
               </span>
               <Button
                 variant="outline"
@@ -117,7 +117,7 @@ export const ComplianceHistory = () => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
-            disabled={GetVehiclesComplianceHistory.isLoading}
+            disabled={GetVehiclesExpensesHistory.isLoading}
           />
         </div>
 
@@ -129,28 +129,22 @@ export const ComplianceHistory = () => {
                 <thead>
                   <tr className="border-b border-border bg-muted/50">
                     <th className="text-left py-4 px-6 font-medium text-sm">
-                      Compliance
+                      Created At
                     </th>
                     <th className="text-left py-4 px-6 font-medium text-sm">
                       Plate Number
                     </th>
                     <th className="text-left py-4 px-6 font-medium text-sm">
-                      Document Number
+                      Type
                     </th>
                     <th className="text-left py-4 px-6 font-medium text-sm">
-                      Issue Date
+                      Amount
                     </th>
                     <th className="text-left py-4 px-6 font-medium text-sm">
-                      Expiry Date
+                      Millage
                     </th>
                     <th className="text-left py-4 px-6 font-medium text-sm">
-                      Created At
-                    </th>
-                    <th className="text-left py-4 px-6 font-medium text-sm">
-                      Status
-                    </th>
-                    <th className="text-left py-4 px-6 font-medium text-sm">
-                      Last Reminder Sent
+                      Description
                     </th>
                     <th className="text-left py-4 px-6 font-medium text-sm">
                       Deleted At
@@ -161,7 +155,7 @@ export const ComplianceHistory = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {GetVehiclesComplianceHistory.isLoading ? (
+                  {GetVehiclesExpensesHistory.isLoading ? (
                     // Skeleton rows
                     [...Array(5)].map((_, index) => (
                       <tr key={index} className="border-b border-border">
@@ -189,22 +183,16 @@ export const ComplianceHistory = () => {
                         <td className="py-4 px-6">
                           <Skeleton className="h-8 w-24" />
                         </td>
-                        <td className="py-4 px-6">
-                          <Skeleton className="h-8 w-24" />
-                        </td>
-                        <td className="py-4 px-6">
-                          <Skeleton className="h-8 w-24" />
-                        </td>
                       </tr>
                     ))
-                  ) : GetVehiclesComplianceHistory.isError ? (
+                  ) : GetVehiclesExpensesHistory.isError ? (
                     // Error state
                     <tr>
                       <td colSpan={10} className="py-12">
                         <div className="flex flex-col items-center justify-center text-center">
                           <AlertCircle className="h-12 w-12 text-destructive mb-4" />
                           <p className="text-sm text-muted-foreground mb-4">
-                            Failed to load compliance
+                            Failed to load expenses
                           </p>
                           <Button
                             variant="outline"
@@ -217,8 +205,8 @@ export const ComplianceHistory = () => {
                         </div>
                       </td>
                     </tr>
-                  ) : !GetVehiclesComplianceHistory.data ||
-                    GetVehiclesComplianceHistory.data.length === 0 ? (
+                  ) : !GetVehiclesExpensesHistory.data ||
+                    GetVehiclesExpensesHistory.data.length === 0 ? (
                     // Empty state
                     <tr>
                       <td colSpan={10} className="py-12 text-center">
@@ -243,45 +231,31 @@ export const ComplianceHistory = () => {
                     </tr>
                   ) : (
                     // Data rows
-                    GetVehiclesComplianceHistory.data.map((vehicle) => (
+                    GetVehiclesExpensesHistory.data.map((expense) => (
                       <tr
-                        key={vehicle.id}
+                        key={expense.id}
                         className="border-b border-border hover:bg-accent/50 transition-colors cursor-pointer"
                         onClick={() => {
-                          setVehicleId(vehicle.id);
-                          //   handleNavigation(vehicle.id);
+                          setVehicleId(expense.id);
+                          //   handleNavigation(expense.id);
                         }}
                       >
                         <td className="py-4 px-6 font-medium">
-                          {vehicle.compliance_type_name}
+                          {format(new Date(expense.created_at), "MMM dd, yyyy")}
                         </td>
-                        <td className="py-4 px-6">{vehicle.plate_number}</td>
-                        <td className="py-4 px-6">{vehicle.document_number}</td>
+                        <td className="py-4 px-6">{expense.plate_number}</td>
+                        <td className="py-4 px-6">{expense.expense_type}</td>
                         <td className="py-4 px-6">
-                          {format(new Date(vehicle.issue_date), "MMM dd, yyyy")}
-                        </td>
-                        <td className="py-4 px-6">
-                          {format(
-                            new Date(vehicle.expiry_date),
-                            "MMM dd, yyyy"
-                          )}
+                          ₦{expense.amount.toLocaleString()}
                         </td>
                         <td className="py-4 px-6">
-                          {format(new Date(vehicle.created_at), "MMM dd, yyyy")}
+                          {expense.vehicle_mileage.toLocaleString()}
                         </td>
-                        <td className="py-4 px-6">{vehicle.status}</td>
+                        <td className="py-4 px-6">{expense.description}</td>
                         <td className="py-4 px-6">
-                          {vehicle.last_reminder_sent
+                          {expense.deleted_at
                             ? format(
-                                new Date(vehicle.last_reminder_sent),
-                                "MMM dd, yyyy"
-                              )
-                            : "-"}
-                        </td>
-                        <td className="py-4 px-6">
-                          {vehicle.deleted_at
-                            ? format(
-                                new Date(vehicle.deleted_at),
+                                new Date(expense.deleted_at),
                                 "MMM dd, yyyy"
                               )
                             : "-"}
@@ -290,7 +264,7 @@ export const ComplianceHistory = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleViewFiles(vehicle)}
+                            onClick={() => handleViewFiles(expense)}
                           >
                             <Eye className="h-4 w-4 mr-1" />
                           </Button>

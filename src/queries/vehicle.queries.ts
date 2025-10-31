@@ -76,6 +76,8 @@ export const useGetAllVehicles = (search) => {
     created_at
             `
           )
+          .is("expenses.deleted_at", null) // keep expenses that aren’t deleted
+
           .order("created_at", { ascending: true });
 
         if (error) throw error;
@@ -93,9 +95,12 @@ export const useGetAllVehicles = (search) => {
     model,
     year,
     users ( full_name ),
+    expenses (amount),
     created_at
             `
           )
+          .is("expenses.deleted_at", null) // keep expenses that aren’t deleted
+
           .or(
             `plate_number.ilike.%${search}%,make.ilike.%${search}%,model.ilike.%${search}%`
           )

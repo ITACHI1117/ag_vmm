@@ -155,7 +155,11 @@ export const LoginComponent = () => {
                   </FormItem>
                 )}
               />
-              <Button className="cursor-pointer" type="submit">
+              <Button
+                disabled={LoginQuery.isPending}
+                className="cursor-pointer"
+                type="submit"
+              >
                 {LoginQuery.isPending ? (
                   <>
                     <Spinner />
