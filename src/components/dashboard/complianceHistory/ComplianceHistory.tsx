@@ -340,7 +340,7 @@ export const ComplianceHistory = () => {
                                 ) : (
                                   <AlertDialogDescription>
                                     This action cannot be undone. This will
-                                    permanently delete this vehicle expense.
+                                    permanently delete this vehicle compliance.
                                   </AlertDialogDescription>
                                 )}
                               </AlertDialogHeader>
