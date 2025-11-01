@@ -25,7 +25,10 @@ import {
 import { useAuthStore } from "@/store/authStore";
 import { DocumentViewerDialog } from "../vehicles/DocumentViewer";
 import { toast } from "sonner";
-import { useGetAllVehiclesExpensesHistory } from "@/queries/expense.queries";
+import {
+  useDeleteExpenses,
+  useGetAllVehiclesExpensesHistory,
+} from "@/queries/expense.queries";
 
 export const ExpensesHistory = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -43,9 +46,11 @@ export const ExpensesHistory = () => {
   // Get all vehicles expenses history
   // debounce searchTerm
   const debounceSearchTerm = useDebounce(searchTerm, 500);
-  const GetAllVehiclesQuery = useGetAllVehicles(debounceSearchTerm);
   const GetVehiclesExpensesHistory =
     useGetAllVehiclesExpensesHistory(debounceSearchTerm);
+
+  //   delete compliance query
+  const DeleteExpenses = useDeleteExpenses();
 
   const { push } = useProgressBarNavigation();
 
@@ -56,6 +61,31 @@ export const ExpensesHistory = () => {
     // } else {
     //   setCurrentScreen("allVehicles");
     // }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      const promise = DeleteExpenses.mutateAsync(id);
+      toast.promise(promise, {
+        loading: "Deleting Expense Record",
+        success: "Expense Record Deleted",
+      });
+      await promise;
+
+      // const expense = GetVehicleExpensesQuery.data.find(
+      //   (item) => item.id === id
+      // );
+
+      // if (!expense) throw new Error("Expense not found");
+
+      // delete related files from storage
+      // await deleteComplianceFilesFromStorage(
+      //   expense.vehicle_id,
+      //   expense.expenses_files
+      // );
+    } catch (error: any) {
+      toast.error(`${error.message}`);
+    }
   };
 
   const handleRetry = () => {
@@ -147,9 +177,6 @@ export const ExpensesHistory = () => {
                       Description
                     </th>
                     <th className="text-left py-4 px-6 font-medium text-sm">
-                      Deleted At
-                    </th>
-                    <th className="text-left py-4 px-6 font-medium text-sm">
                       Actions
                     </th>
                   </tr>
@@ -177,9 +204,7 @@ export const ExpensesHistory = () => {
                         <td className="py-4 px-6">
                           <Skeleton className="h-5 w-24" />
                         </td>
-                        <td className="py-4 px-6">
-                          <Skeleton className="h-8 w-24" />
-                        </td>
+
                         <td className="py-4 px-6">
                           <Skeleton className="h-8 w-24" />
                         </td>
@@ -234,16 +259,20 @@ export const ExpensesHistory = () => {
                     GetVehiclesExpensesHistory.data.map((expense) => (
                       <tr
                         key={expense.id}
-                        className="border-b border-border hover:bg-accent/50 transition-colors cursor-pointer"
-                        onClick={() => {
-                          setVehicleId(expense.id);
-                          //   handleNavigation(expense.id);
-                        }}
+                        className="border-b border-border hover:bg-accent/50 transition-colors "
                       >
                         <td className="py-4 px-6 font-medium">
                           {format(new Date(expense.created_at), "MMM dd, yyyy")}
                         </td>
-                        <td className="py-4 px-6">{expense.plate_number}</td>
+                        <td
+                          onClick={() => {
+                            setVehicleId(expense.id);
+                            handleNavigation(expense.vehicle_id);
+                          }}
+                          className="py-4 px-6 text-primary underline cursor-pointer"
+                        >
+                          {expense.plate_number}
+                        </td>
                         <td className="py-4 px-6">{expense.expense_type}</td>
                         <td className="py-4 px-6">
                           ₦{expense.amount.toLocaleString()}
@@ -252,14 +281,7 @@ export const ExpensesHistory = () => {
                           {expense.vehicle_mileage.toLocaleString()}
                         </td>
                         <td className="py-4 px-6">{expense.description}</td>
-                        <td className="py-4 px-6">
-                          {expense.deleted_at
-                            ? format(
-                                new Date(expense.deleted_at),
-                                "MMM dd, yyyy"
-                              )
-                            : "-"}
-                        </td>
+
                         <td className="py-3 px-4 text-sm">
                           <Button
                             variant="ghost"
@@ -269,7 +291,7 @@ export const ExpensesHistory = () => {
                             <Eye className="h-4 w-4 mr-1" />
                           </Button>
                           {/* removed delete button for now */}
-                          {/* <AlertDialog>
+                          <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button
                                 variant={"ghost"}
@@ -308,24 +330,17 @@ export const ExpensesHistory = () => {
                                 {userRole !== "Staff" && (
                                   <AlertDialogAction
                                     className="cursor-pointer"
-                                    //   onClick={() => {
-                                    //     handleDelete(expense.id);
-                                    //     // Add delete logic here
-                                    //   }}
+                                    onClick={() => {
+                                      handleDelete(expense.id);
+                                      // Add delete logic here
+                                    }}
                                   >
                                     Delete
                                   </AlertDialogAction>
                                 )}
                               </AlertDialogFooter>
                             </AlertDialogContent>
-                          </AlertDialog> */}
-                          {/* <Button
-                          variant="ghost"
-                          size="sm"
-                         
-                        >
-                          <Trash className="h-4 w-4 mr-1 text-red-500" />
-                        </Button> */}
+                          </AlertDialog>
                         </td>
                       </tr>
                     ))

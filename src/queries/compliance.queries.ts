@@ -167,13 +167,14 @@ export const useGetAllVehiclesComplianceHistory = (search) => {
   expiry_date,
   status,
   created_at,
+  vehicle_id,
   last_reminder_sent,
-  deleted_at,
   compliance_type_name,
   plate_number,
   files
 `
           )
+          .is("deleted_at", null)
           .order("created_at", { ascending: true });
 
         if (error) throw error;
@@ -192,8 +193,8 @@ export const useGetAllVehiclesComplianceHistory = (search) => {
   expiry_date,
   status,
   created_at,
+  vehicle_id,
   last_reminder_sent,
-  deleted_at,
   compliance_type_name,
   plate_number,
   files
@@ -202,6 +203,7 @@ export const useGetAllVehiclesComplianceHistory = (search) => {
           .or(
             `document_number.ilike.%${search}%,status.ilike.%${search}%,plate_number.ilike.%${search}%,compliance_type_name.ilike.%${search}%`
           )
+          .is("deleted_at", null)
           .order("created_at", { ascending: true });
 
         if (error) throw error;

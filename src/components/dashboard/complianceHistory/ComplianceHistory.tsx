@@ -11,7 +11,10 @@ import { Search, AlertCircle, RefreshCw, Eye, Trash } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useGetAllVehicles } from "@/queries/vehicle.queries";
 import { useDebounce } from "@/hooks/useDebounce";
-import { useGetAllVehiclesComplianceHistory } from "@/queries/compliance.queries";
+import {
+  useDeleteCompliance,
+  useGetAllVehiclesComplianceHistory,
+} from "@/queries/compliance.queries";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,9 +46,11 @@ export const ComplianceHistory = () => {
   // Get all vehicles compliance history
   // debounce searchTerm
   const debounceSearchTerm = useDebounce(searchTerm, 500);
-  const GetAllVehiclesQuery = useGetAllVehicles(debounceSearchTerm);
   const GetVehiclesComplianceHistory =
     useGetAllVehiclesComplianceHistory(debounceSearchTerm);
+
+  //   delete compliance query
+  const DeleteCompliance = useDeleteCompliance();
 
   const { push } = useProgressBarNavigation();
 
@@ -56,6 +61,27 @@ export const ComplianceHistory = () => {
     // } else {
     //   setCurrentScreen("allVehicles");
     // }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      const promise = DeleteCompliance.mutateAsync(id);
+
+      toast.promise(promise, {
+        loading: "Deleting Compliance Record",
+        success: "Compliance Record Deleted",
+        error: "There was an error while trying to delete this record",
+      });
+
+      // await promise;
+
+      // deleteComplianceFilesFromStorage(
+      //   compliance.vehicles.id,
+      //   compliance.compliance_files
+      // );
+    } catch (error) {
+      toast.error(`${error.message}`);
+    }
   };
 
   const handleRetry = () => {
@@ -152,9 +178,7 @@ export const ComplianceHistory = () => {
                     <th className="text-left py-4 px-6 font-medium text-sm">
                       Last Reminder Sent
                     </th>
-                    <th className="text-left py-4 px-6 font-medium text-sm">
-                      Deleted At
-                    </th>
+
                     <th className="text-left py-4 px-6 font-medium text-sm">
                       Actions
                     </th>
@@ -182,9 +206,6 @@ export const ComplianceHistory = () => {
                         </td>
                         <td className="py-4 px-6">
                           <Skeleton className="h-5 w-24" />
-                        </td>
-                        <td className="py-4 px-6">
-                          <Skeleton className="h-8 w-24" />
                         </td>
                         <td className="py-4 px-6">
                           <Skeleton className="h-8 w-24" />
@@ -246,16 +267,19 @@ export const ComplianceHistory = () => {
                     GetVehiclesComplianceHistory.data.map((vehicle) => (
                       <tr
                         key={vehicle.id}
-                        className="border-b border-border hover:bg-accent/50 transition-colors cursor-pointer"
-                        onClick={() => {
-                          setVehicleId(vehicle.id);
-                          //   handleNavigation(vehicle.id);
-                        }}
+                        className="border-b border-border hover:bg-accent/50 transition-colors "
                       >
                         <td className="py-4 px-6 font-medium">
                           {vehicle.compliance_type_name}
                         </td>
-                        <td className="py-4 px-6">{vehicle.plate_number}</td>
+                        <td
+                          onClick={() => {
+                            handleNavigation(vehicle.vehicle_id);
+                          }}
+                          className="py-4 px-6 text-primary underline cursor-pointer"
+                        >
+                          {vehicle.plate_number}
+                        </td>
                         <td className="py-4 px-6">{vehicle.document_number}</td>
                         <td className="py-4 px-6">
                           {format(new Date(vehicle.issue_date), "MMM dd, yyyy")}
@@ -278,14 +302,7 @@ export const ComplianceHistory = () => {
                               )
                             : "-"}
                         </td>
-                        <td className="py-4 px-6">
-                          {vehicle.deleted_at
-                            ? format(
-                                new Date(vehicle.deleted_at),
-                                "MMM dd, yyyy"
-                              )
-                            : "-"}
-                        </td>
+
                         <td className="py-3 px-4 text-sm">
                           <Button
                             variant="ghost"
@@ -295,7 +312,7 @@ export const ComplianceHistory = () => {
                             <Eye className="h-4 w-4 mr-1" />
                           </Button>
                           {/* removed delete button for now */}
-                          {/* <AlertDialog>
+                          <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button
                                 variant={"ghost"}
@@ -334,24 +351,17 @@ export const ComplianceHistory = () => {
                                 {userRole !== "Staff" && (
                                   <AlertDialogAction
                                     className="cursor-pointer"
-                                    //   onClick={() => {
-                                    //     handleDelete(expense.id);
-                                    //     // Add delete logic here
-                                    //   }}
+                                    onClick={() => {
+                                      handleDelete(vehicle.id);
+                                      // Add delete logic here
+                                    }}
                                   >
                                     Delete
                                   </AlertDialogAction>
                                 )}
                               </AlertDialogFooter>
                             </AlertDialogContent>
-                          </AlertDialog> */}
-                          {/* <Button
-                          variant="ghost"
-                          size="sm"
-                         
-                        >
-                          <Trash className="h-4 w-4 mr-1 text-red-500" />
-                        </Button> */}
+                          </AlertDialog>
                         </td>
                       </tr>
                     ))

@@ -163,11 +163,12 @@ export const useGetAllVehiclesExpensesHistory = (search) => {
   vehicle_mileage,
   description,
   created_at,
-  deleted_at,
+  vehicle_id,
   plate_number,
   files
 `
           )
+          .is("deleted_at", null)
           .order("created_at", { ascending: true });
 
         if (error) throw error;
@@ -185,7 +186,7 @@ export const useGetAllVehiclesExpensesHistory = (search) => {
   vehicle_mileage,
   description,
   created_at,
-  deleted_at,
+  vehicle_id,
   plate_number,
   files
 `
@@ -193,6 +194,7 @@ export const useGetAllVehiclesExpensesHistory = (search) => {
           .or(
             `plate_number.ilike.%${search}%,expense_type.ilike.%${search}%,description.ilike.%${search}%`
           )
+          .is("deleted_at", null)
           .order("created_at", { ascending: true });
 
         if (error) throw error;

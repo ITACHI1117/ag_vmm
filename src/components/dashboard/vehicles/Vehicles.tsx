@@ -12,6 +12,7 @@ import { AddVehicleModal } from "./AddVechileModal";
 import VehicleDetailsComponent from "./VehiclesDetailsComponent";
 import { useGetAllVehicles } from "@/queries/vehicle.queries";
 import { useDebounce } from "@/hooks/useDebounce";
+import { format } from "date-fns";
 
 export const VehiclesComponent = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -128,6 +129,9 @@ export const VehiclesComponent = () => {
                       Added By
                     </th>
                     <th className="text-left py-4 px-6 font-medium text-sm">
+                      Created At
+                    </th>
+                    <th className="text-left py-4 px-6 font-medium text-sm">
                       Total Spent
                     </th>
                     <th className="text-left py-4 px-6 font-medium text-sm">
@@ -154,6 +158,9 @@ export const VehiclesComponent = () => {
                         </td>
                         <td className="py-4 px-6">
                           <Skeleton className="h-5 w-28" />
+                        </td>
+                        <td className="py-4 px-6">
+                          <Skeleton className="h-5 w-24" />
                         </td>
                         <td className="py-4 px-6">
                           <Skeleton className="h-5 w-24" />
@@ -226,6 +233,10 @@ export const VehiclesComponent = () => {
                         <td className="py-4 px-6">{vehicle.year}</td>
                         <td className="py-4 px-6">
                           {vehicle.users?.full_name || "N/A"}
+                        </td>
+
+                        <td className="py-4 px-6">
+                          {format(new Date(vehicle.created_at), "MMM dd, yyyy")}
                         </td>
                         <td className="py-4 px-6 font-medium">
                           ₦

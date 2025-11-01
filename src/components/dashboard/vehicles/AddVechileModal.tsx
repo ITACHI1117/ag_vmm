@@ -68,7 +68,11 @@ export const AddVehicleModal = ({ onClose }: { onClose: () => void }) => {
 
   useEffect(() => {
     if (AddVehicleQuery.isError) {
-      toast.error(`${AddVehicleQuery.error.message}`);
+      if (AddVehicleQuery.error.code == "23505") {
+        toast.error(`A vehicle with this plate number already exists.`);
+      } else {
+        toast.error(`${AddVehicleQuery.error.message}`);
+      }
     }
   }, [AddVehicleQuery.isError]);
 
