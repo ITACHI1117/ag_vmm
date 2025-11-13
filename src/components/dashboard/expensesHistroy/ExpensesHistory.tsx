@@ -147,7 +147,7 @@ export const ExpensesHistory = () => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
-            disabled={GetVehiclesExpensesHistory.isLoading}
+            // disabled={GetVehiclesExpensesHistory.isLoading}
           />
         </div>
 

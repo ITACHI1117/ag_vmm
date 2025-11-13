@@ -143,7 +143,7 @@ export const ComplianceHistory = () => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
-            disabled={GetVehiclesComplianceHistory.isLoading}
+            // disabled={GetVehiclesComplianceHistory.isLoading}
           />
         </div>
 

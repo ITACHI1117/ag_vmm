@@ -102,7 +102,7 @@ export const VehiclesComponent = () => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
-            disabled={GetAllVehiclesQuery.isLoading}
+            // disabled={GetAllVehiclesQuery.isLoading}
           />
         </div>
 
